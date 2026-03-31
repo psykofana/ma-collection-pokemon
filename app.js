@@ -54,8 +54,17 @@ let activeFilters = { search: '', sheet: '', bloc: '', etat: '', sort: 'nom' };
    DATA FETCHING
    ============================================================ */
 async function fetchSheet(sheet) {
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${sheet.gid}`;
-  const res = await fetch(url);
+  // credentials: 'omit' est CRITIQUE — évite que le navigateur envoie les cookies Google
+  // ce qui provoquerait une redirection d'auth même sur un tableur public
+  const cacheBust = Math.floor(Date.now() / 300000); // invalide le cache navigateur toutes les 5 min
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${sheet.gid}&headers=2&_=${cacheBust}`;
+  let res;
+  try {
+    res = await fetch(url, { mode: 'cors', credentials: 'omit' });
+  } catch (e) {
+    // Fallback sans options si le navigateur bloque
+    res = await fetch(url);
+  }
   if (!res.ok) throw new Error(`Erreur HTTP ${res.status} pour ${sheet.name}`);
   const text = await res.text();
   // Google wraps JSON in google.visualization.Query.setResponse({...});
