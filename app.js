@@ -54,80 +54,53 @@ let activeFilters = { search: '', sheet: '', bloc: '', etat: '', sort: 'nom' };
    DATA FETCHING
    ============================================================ */
 async function fetchSheet(sheet) {
-  // credentials: 'omit' est CRITIQUE — évite que le navigateur envoie les cookies Google
-  // ce qui provoquerait une redirection d'auth même sur un tableur public
-  const cacheBust = Math.floor(Date.now() / 300000); // invalide le cache navigateur toutes les 5 min
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${sheet.gid}&headers=2&_=${cacheBust}`;
-  let res;
-  try {
-    res = await fetch(url, { mode: 'cors', credentials: 'omit' });
-  } catch (e) {
-    // Fallback sans options si le navigateur bloque
-    res = await fetch(url);
-  }
+  // Export CSV public — bypass complet de l'auth Google, pas de cookies envoyés
+  const cacheBust = Math.floor(Date.now() / 300000);
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${sheet.gid}&_=${cacheBust}`;
+  const res = await fetch(url, { credentials: 'omit' });
   if (!res.ok) throw new Error(`Erreur HTTP ${res.status} pour ${sheet.name}`);
   const text = await res.text();
-  // Google wraps JSON in google.visualization.Query.setResponse({...});
-  // The response also starts with /*O_o*/ — find the first { and last }
-  const start = text.indexOf('{');
-  const end   = text.lastIndexOf('}');
-  if (start === -1 || end === -1) throw new Error(`Réponse invalide pour ${sheet.name}`);
-  const json = JSON.parse(text.substring(start, end + 1));
-  return parseSheetData(json, sheet.name);
+  return parseCSV(text, sheet.name);
 }
 
-function cellVal(c) {
-  // Extract raw value from a gviz cell object
-  // Numbers arrive as {v: 3.0, f: "3,00 €"}, strings as {v: "text"}, null cells as null
-  if (!c || c.v === null || c.v === undefined) return '';
-  return c.v; // Return raw value (number or string)
-}
-
-function parseSheetData(json, sheetName) {
-  const rows = json.table?.rows || [];
+function parseCSV(text, sheetName) {
+  // Parser CSV minimal qui gère les champs entre guillemets
+  const lines = text.split(/\r?\n/);
   const cards = [];
 
-  for (const row of rows) {
-    if (!row.c) continue;
-    // Get raw values from cells (numbers stay as numbers, strings as strings)
-    const raw = row.c.map(cellVal);
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const cells = splitCSVLine(line);
 
     // Colonnes: [0]=index, [1]=Nom, [2]=Attribut, [3]=Numéro, [4]=Année,
     //           [5]=Bloc, [6]=Série, [7]=Reverse/Holo, [8]=Stock, [9]=Etat, [10]=Prix/u, [11]=PrixVente, [12]=Image
-    const nom = (raw[1] !== '' ? String(raw[1]).trim() : '');
-    if (!nom || nom === 'Nom' || nom === 'Attribut supp.') continue; // skip headers & empty
+    const nom = (cells[1] || '').trim();
+    if (!nom || nom === 'Nom' || nom === 'Attribut supp.') continue; // skip headers
 
-    // Stock — gviz returns float (e.g. 1.0), convert to int
-    const stockRaw = raw[8];
-    const stock = (typeof stockRaw === 'number') ? Math.round(stockRaw) : (parseInt(String(stockRaw)) || 0);
+    // Stock
+    const stock = parseInt(cells[8]) || 0;
 
     // État
-    const etat = raw[9] !== '' ? String(raw[9]).trim() : '';
+    const etat = (cells[9] || '').trim();
 
-    // Prix unitaire — gviz returns float already (e.g. 3.0)
-    const prixRaw = raw[10];
-    let prix = 0;
-    if (typeof prixRaw === 'number') {
-      prix = prixRaw;
-    } else if (prixRaw !== '') {
-      prix = parseFloat(String(prixRaw).replace('€','').replace(',','.').replace(/\s/g,'').trim()) || 0;
-    }
+    // Prix — format "3,00 €" dans le CSV
+    const prixStr = (cells[10] || '').replace('€','').replace(',','.').replace(/\s/g,'').trim();
+    const prix = parseFloat(prixStr) || 0;
 
-    // Image URL (column M, index 12)
-    const image = raw[12] !== '' ? String(raw[12]).trim() : '';
+    // Image URL (colonne M = index 12)
+    const image = (cells[12] || '').trim();
 
-    // Skip lignes fantômes (pas de nom réel)
     if (!nom) continue;
 
     cards.push({
       sheet:       sheetName,
       nom:         nom,
-      attribut:    raw[2] !== '' ? String(raw[2]).trim() : '',
-      numero:      raw[3] !== '' ? String(raw[3]).trim() : '',
-      annee:       raw[4] !== '' ? String(raw[4]).trim() : '',
-      bloc:        raw[5] !== '' ? String(raw[5]).trim() : '',
-      serie:       raw[6] !== '' ? String(raw[6]).trim() : '',
-      reverseHolo: raw[7] !== '' ? String(raw[7]).trim() : '',
+      attribut:    (cells[2] || '').trim(),
+      numero:      (cells[3] || '').trim(),
+      annee:       (cells[4] || '').trim(),
+      bloc:        (cells[5] || '').trim(),
+      serie:       (cells[6] || '').trim(),
+      reverseHolo: (cells[7] || '').trim(),
       stock:       stock,
       etat:        etat,
       prix:        prix,
@@ -136,6 +109,27 @@ function parseSheetData(json, sheetName) {
     });
   }
   return cards;
+}
+
+function splitCSVLine(line) {
+  // Gère les champs entre guillemets (qui peuvent contenir des virgules)
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i+1] === '"') { current += '"'; i++; } // escaped quote
+      else inQuotes = !inQuotes;
+    } else if (ch === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current);
+  return result;
 }
 
 async function loadAllCards() {
