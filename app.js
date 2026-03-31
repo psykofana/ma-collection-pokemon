@@ -42,7 +42,8 @@ let activeFilters = { search: '', sheet: '', bloc: '', serie: '', etat: '', sort
    ============================================================ */
 async function fetchSheet(sheet) {
   const cacheBust = Math.floor(Date.now() / 300000);
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${sheet.gid}&_=${cacheBust}`;
+  // gviz/tq répond directement en CSV sans redirect, CORS ok depuis GitHub Pages
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${sheet.gid}&_=${cacheBust}`;
   const res = await fetch(url, { credentials: 'omit' });
   if (!res.ok) throw new Error(`HTTP ${res.status} pour ${sheet.name}`);
   const text = await res.text();
@@ -61,7 +62,9 @@ function parseCSV(text, sheetName) {
     const etat  = (cells[9] || '').trim();
     const prixStr = (cells[10] || '').replace('€','').replace(',','.').replace(/\s/g,'').trim();
     const prix  = parseFloat(prixStr) || 0;
-    const image = (cells[12] || '').trim();
+    // L'image peut être en col[11] ou col[12] selon la feuille — on prend la première qui ressemble à une URL
+    const imgCandidates = [cells[11], cells[12], cells[13]].map(c => (c||'').trim());
+    const image = imgCandidates.find(c => c.startsWith('http')) || '';
     if (!nom) continue;
     cards.push({
       sheet: sheetName, nom,
