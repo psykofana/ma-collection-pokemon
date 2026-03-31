@@ -289,6 +289,9 @@ function updateResultCount() {
    MODAL — CARTE DÉTAIL
    ============================================================ */
 function openModal(card) {
+  currentModalCard = card;
+  document.getElementById('modal-edit-form').hidden = true;
+  document.getElementById('modal-edit-btn').hidden = false;
   document.getElementById('modal-sheet').textContent = card.sheet;
   document.getElementById('modal-title').textContent = card.nom;
 
@@ -337,7 +340,103 @@ function openModal(card) {
 
 function closeModal() {
   document.getElementById('modal-overlay').hidden = true;
+  document.getElementById('modal-edit-form').hidden = true;
   document.body.style.overflow = '';
+}
+
+/* ============================================================
+   MODAL — ÉDITION CARTE
+   ============================================================ */
+let currentEditCard = null;
+let currentModalCard = null;
+
+function openEditForm(card) {
+  currentEditCard = card;
+  document.getElementById('e-image').value = card.image || '';
+  document.getElementById('e-prix').value  = card.prix || '';
+  document.getElementById('e-stock').value = card.stock || 1;
+  document.getElementById('e-etat').value  = card.etat || 'Nmint/Mint';
+  document.getElementById('modal-edit-notice').hidden = true;
+  document.getElementById('modal-edit-form').hidden = false;
+  document.getElementById('modal-edit-btn').hidden = true;
+}
+
+function closeEditForm() {
+  document.getElementById('modal-edit-form').hidden = true;
+  document.getElementById('modal-edit-btn').hidden = false;
+  currentEditCard = null;
+}
+
+async function saveEditCard() {
+  if (!currentEditCard) return;
+
+  const saveBtn = document.getElementById('modal-edit-save');
+  saveBtn.disabled = true;
+  saveBtn.textContent = '...';
+
+  const image  = document.getElementById('e-image').value.trim();
+  const prix   = parseFloat(document.getElementById('e-prix').value) || 0;
+  const stock  = parseInt(document.getElementById('e-stock').value) || 0;
+  const etat   = document.getElementById('e-etat').value;
+
+  try {
+    // Trouver l'id Supabase via nom + numero + sheet
+    const searchRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/cards?nom=eq.${encodeURIComponent(currentEditCard.nom)}&numero=eq.${encodeURIComponent(currentEditCard.numero)}&sheet=eq.${encodeURIComponent(currentEditCard.sheet)}&select=id&limit=1`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+    );
+    const found = await searchRes.json();
+    if (!found.length) throw new Error('Carte introuvable dans la base');
+
+    const id = found[0].id;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/cards?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey':        SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type':  'application/json',
+        'Prefer':        'return=minimal',
+      },
+      body: JSON.stringify({ image, prix, stock, prix_total: prix * stock, etat }),
+    });
+
+    if (res.ok) {
+      // Mettre à jour l'image dans le modal immédiatement
+      if (image) {
+        const modalImg = document.getElementById('modal-img');
+        modalImg.src = image;
+        modalImg.hidden = false;
+        document.getElementById('modal-img-placeholder').hidden = true;
+      }
+      document.getElementById('modal-price-unit').textContent  = formatPrix(prix);
+      document.getElementById('modal-price-total').textContent = formatPrix(prix * stock);
+
+      // Mettre à jour dans allCards
+      const idx = allCards.findIndex(c => c.nom === currentEditCard.nom && c.numero === currentEditCard.numero && c.sheet === currentEditCard.sheet);
+      if (idx !== -1) {
+        allCards[idx] = { ...allCards[idx], image, prix, stock, prixTotal: prix * stock, etat };
+      }
+
+      const noticeEl = document.getElementById('modal-edit-notice');
+      const noticeText = document.getElementById('modal-edit-notice-text');
+      noticeEl.className = 'add-notice add-notice-success';
+      noticeText.textContent = '✓ Modifications enregistrées';
+      noticeEl.hidden = false;
+      setTimeout(() => { closeEditForm(); applyFilters(); }, 1200);
+    } else {
+      const err = await res.json();
+      throw new Error(err.message || 'Erreur inconnue');
+    }
+  } catch (err) {
+    const noticeEl = document.getElementById('modal-edit-notice');
+    const noticeText = document.getElementById('modal-edit-notice-text');
+    noticeEl.className = 'add-notice add-notice-error';
+    noticeText.textContent = err.message;
+    noticeEl.hidden = false;
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Enregistrer';
+  }
 }
 
 /* ============================================================
@@ -559,6 +658,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Modal carte
   document.getElementById('modal-close')?.addEventListener('click', closeModal);
   document.getElementById('modal-overlay')?.addEventListener('click', e => { if (e.target===e.currentTarget) closeModal(); });
+  document.getElementById('modal-edit-btn')?.addEventListener('click', () => openEditForm(currentModalCard));
+  document.getElementById('modal-edit-cancel')?.addEventListener('click', closeEditForm);
+  document.getElementById('modal-edit-save')?.addEventListener('click', saveEditCard);
 
   // Modal ajouter
   document.getElementById('add-card-btn')?.addEventListener('click', openAddModal);
