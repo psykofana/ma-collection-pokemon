@@ -2,6 +2,11 @@
    CONFIGURATION
    ============================================================ */
 const SHEET_ID = '13tKsaOj-QwE2b-3FHim0Isacq1Alfe20B8NOLfy02hM';
+
+// ⚙️ À remplir après avoir déployé le Google Apps Script (voir apps-script.gs)
+// Exemple: 'https://script.google.com/macros/s/XXXXXXXXX/exec'
+const APPS_SCRIPT_URL = '';
+
 const SHEETS = [
   { name: 'Divers',         gid: '0',          icon: '🃏', label: 'Divers' },
   { name: 'Reverses',       gid: '826801908',   icon: '🔄', label: 'Reverses' },
@@ -11,36 +16,18 @@ const SHEETS = [
   { name: 'Zarbi',          gid: '44965854',    icon: '❓', label: 'Zarbi' },
 ];
 
-// Correspondance état → classe CSS
+// Blocs → Séries (extrait du tableur)
+const BLOCS_SERIES = {"Diamant & Perle": ["Diamant & Perle", "Diamant & Perle Aube Majestueuse", "Diamant & Perle Duels au sommet", "Diamant & Perle Merveilles Secrètes", "Diamant & Perle Tempête", "Diamant & Perle Trésors Mystérieux", "Diamant & Perle Éveil des Légendes"], "EX": ["EX Espèces Delta", "EX Fantômes Holon", "EX Forces Cachées", "EX Gardiens du Pouvoir"], "HeartGold & SoulSilver": ["HS Déchaînement", "HS Indomptable", "HS Triomphe"], "MacDonald's": ["Combat Express 2022", "Mcdo 2011", "Mcdo 2013", "Mcdo 2014", "Mcdo 2015", "Mcdo 2017", "Mcdo 2019", "Mcdo 2021"], "Mega-Evolution": ["Flammes fantasmagoriques", "Héros Transcendants", "Mega-Evolution"], "Noir & Blanc": ["Noir & Blanc Glaciation Plasma", "Noir & Blanc Nobles Victoires", "Noir & Blanc Pouvoirs Émergents"], "Platine (bloc)": ["Platine", "Platine Rivaux Émergeants", "Platinum Arceus"], "Pokémon Stadium": ["Danone"], "Promos": ["Détective Pikachu", "PCG-P", "POP 7", "POP 9", "Promo BW, pour la série Noir & Blanc", "Promo DP, pour les séries Diamant & Perle et Platine", "Promo MEP, pour le bloc Méga Evolution", "Promo Nintendo, pour la série EX", "Promo SM, pour la série Soleil et Lune", "Promo SV, pour la série Écarlate et Violet", "Promo SWSH, pour la série Épée et Bouclier", "Promo Wizards, pour la série Wizards", "Promo XY, pour la série XY"], "S8b": ["VMAX Climax"], "SV8a": ["Terastal Festival"], "Soleil et Lune": ["Destinées Occultes", "Soleil et Lune", "Soleil et Lune Duo de Choc", "Soleil et Lune Gardiens Ascendants", "Soleil et Lune Harmonie des Esprits", "Soleil et Lune Invasion Carmin", "Soleil et Lune Ombres Ardentes", "Soleil et Lune Tempête Céleste", "Soleil et Lune Ultra-Prisme", "Soleil et Lune Éclipse Cosmique"], "Séries Chinoises": ["Gem Pack vol. 1", "Gem Pack vol. 2"], "Trainer Kits": ["Diamant & Perle Kit Dresseur", "Mudkip Constructed Starter Deck", "Soleil et Lune Kit du Dresseur: Raichu d'Alola", "XY Kit du Dresseur: Latias & Latios", "XY Trainer Kit Nymphali"], "Wizards": ["Aquapolis", "Expedition", "Jungle", "Neo Destiny", "Set de Base"], "XY": ["Double Danger", "Générations", "XY", "XY Ciel Rugissant", "XY Impact des Destins", "XY Impulsion TURBO", "XY Offensive Vapeur", "XY Origines Antiques", "XY Poings Furieux", "XY Primo-Choc", "XY Rupture TURBO", "XY Vigueur Spectrale", "XY Étincelles", "XY Évolutions"], "Écarlate et Violet": ["Aventures ensemble", "Couronne stellaire", "Destinées de Paldea", "Etincelles déferlantes", "Evolutions prismatiques", "Fable nébuleuse", "Faille Paradoxe", "Flamme blanche", "Forces temporelles", "Foudre noire", "Mascarade crépusculaire", "Rivalités Destinées", "Rivalités destinées", "Écarlate et Violet", "Écarlate et Violet 151", "Écarlate et Violet Flammes Obsidiennes", "Écarlate et Violet Évolutions à Paldea"], "Épée et Bouclier": ["Célébrations", "Destinées Radieuses", "Pokémon GO", "Zénith Suprême", "Épée et Bouclier", "Épée et Bouclier Astres Radieux", "Épée et Bouclier Origine Perdue", "Épée et Bouclier Poing de Fusion", "Épée et Bouclier Règne de Glace", "Épée et Bouclier Stars Étincelantes", "Épée et Bouclier Styles de Combat", "Épée et Bouclier Tempête Argentée", "Épée et Bouclier Ténèbres Embrasées", "Épée et Bouclier Voltage Éclatant", "Épée et Bouclier Évolution Céleste"]};
+
 const ETAT_CLASS = {
-  'GEM Mint':   'etat-gem',
-  'Nmint/Mint': 'etat-nm',
-  'Exc':        'etat-exc',
-  'Fine':       'etat-fine',
-  'Played':     'etat-played',
-  'Poor':       'etat-poor',
-  'Missprint':  'etat-played',
+  'GEM Mint':'etat-gem','Nmint/Mint':'etat-nm','Exc':'etat-exc',
+  'Fine':'etat-fine','Played':'etat-played','Poor':'etat-poor','Missprint':'etat-played',
 };
-
 const ETAT_LABEL = {
-  'GEM Mint':   'GEM',
-  'Nmint/Mint': 'NM',
-  'Exc':        'EX',
-  'Fine':       'GD',
-  'Played':     'PL',
-  'Poor':       'PO',
-  'Missprint':  'MS',
+  'GEM Mint':'GEM','Nmint/Mint':'NM','Exc':'EX','Fine':'GD','Played':'PL','Poor':'PO','Missprint':'MS',
 };
-
-// Correspondance état tableur → état Cardmarket pour l'URL
 const ETAT_CM = {
-  'GEM Mint':   1,
-  'Nmint/Mint': 2,
-  'Exc':        3,
-  'Fine':       4,
-  'Played':     6,
-  'Poor':       7,
-  'Missprint':  2,
+  'GEM Mint':1,'Nmint/Mint':2,'Exc':3,'Fine':4,'Played':6,'Poor':7,'Missprint':2,
 };
 
 /* ============================================================
@@ -48,85 +35,61 @@ const ETAT_CM = {
    ============================================================ */
 let allCards = [];
 let filteredCards = [];
-let activeFilters = { search: '', sheet: '', bloc: '', etat: '', sort: 'nom' };
+let activeFilters = { search: '', sheet: '', bloc: '', serie: '', etat: '', sort: 'nom' };
 
 /* ============================================================
-   DATA FETCHING
+   DATA FETCHING — export CSV public (bypass auth Google)
    ============================================================ */
 async function fetchSheet(sheet) {
-  // Export CSV public — bypass complet de l'auth Google, pas de cookies envoyés
   const cacheBust = Math.floor(Date.now() / 300000);
   const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${sheet.gid}&_=${cacheBust}`;
   const res = await fetch(url, { credentials: 'omit' });
-  if (!res.ok) throw new Error(`Erreur HTTP ${res.status} pour ${sheet.name}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status} pour ${sheet.name}`);
   const text = await res.text();
   return parseCSV(text, sheet.name);
 }
 
 function parseCSV(text, sheetName) {
-  // Parser CSV minimal qui gère les champs entre guillemets
   const lines = text.split(/\r?\n/);
   const cards = [];
-
   for (const line of lines) {
     if (!line.trim()) continue;
     const cells = splitCSVLine(line);
-
-    // Colonnes: [0]=index, [1]=Nom, [2]=Attribut, [3]=Numéro, [4]=Année,
-    //           [5]=Bloc, [6]=Série, [7]=Reverse/Holo, [8]=Stock, [9]=Etat, [10]=Prix/u, [11]=PrixVente, [12]=Image
     const nom = (cells[1] || '').trim();
-    if (!nom || nom === 'Nom' || nom === 'Attribut supp.') continue; // skip headers
-
-    // Stock
+    if (!nom || nom === 'Nom' || nom === 'Attribut supp.') continue;
     const stock = parseInt(cells[8]) || 0;
-
-    // État
-    const etat = (cells[9] || '').trim();
-
-    // Prix — format "3,00 €" dans le CSV
+    const etat  = (cells[9] || '').trim();
     const prixStr = (cells[10] || '').replace('€','').replace(',','.').replace(/\s/g,'').trim();
-    const prix = parseFloat(prixStr) || 0;
-
-    // Image URL (colonne M = index 12)
+    const prix  = parseFloat(prixStr) || 0;
     const image = (cells[12] || '').trim();
-
     if (!nom) continue;
-
     cards.push({
-      sheet:       sheetName,
-      nom:         nom,
-      attribut:    (cells[2] || '').trim(),
-      numero:      (cells[3] || '').trim(),
-      annee:       (cells[4] || '').trim(),
-      bloc:        (cells[5] || '').trim(),
-      serie:       (cells[6] || '').trim(),
-      reverseHolo: (cells[7] || '').trim(),
-      stock:       stock,
-      etat:        etat,
-      prix:        prix,
-      prixTotal:   prix * stock,
-      image:       image,
+      sheet: sheetName, nom,
+      attribut:    (cells[2]||'').trim(),
+      numero:      (cells[3]||'').trim(),
+      annee:       (cells[4]||'').trim(),
+      bloc:        (cells[5]||'').trim(),
+      serie:       (cells[6]||'').trim(),
+      reverseHolo: (cells[7]||'').trim(),
+      stock, etat, prix,
+      prixTotal: prix * stock,
+      image,
     });
   }
   return cards;
 }
 
 function splitCSVLine(line) {
-  // Gère les champs entre guillemets (qui peuvent contenir des virgules)
   const result = [];
-  let current = '';
-  let inQuotes = false;
+  let current = '', inQuotes = false;
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
     if (ch === '"') {
-      if (inQuotes && line[i+1] === '"') { current += '"'; i++; } // escaped quote
+      if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
       else inQuotes = !inQuotes;
     } else if (ch === ',' && !inQuotes) {
-      result.push(current);
-      current = '';
-    } else {
-      current += ch;
-    }
+      result.push(current); current = '';
+    } else current += ch;
   }
   result.push(current);
   return result;
@@ -136,7 +99,7 @@ async function loadAllCards() {
   showLoading();
   try {
     const results = await Promise.all(SHEETS.map(s => fetchSheet(s)));
-    allCards = results.flat().filter(c => c.stock > 0); // seulement les cartes en stock
+    allCards = results.flat().filter(c => c.stock > 0);
     populateFilters();
     updateStats();
     updateCatCounts();
@@ -144,7 +107,7 @@ async function loadAllCards() {
     showMain();
   } catch (err) {
     console.error(err);
-    showError('Impossible de charger la collection.\nVérifie que le tableur est bien partagé en lecture.');
+    showError(`Chargement impossible : ${err.message}`);
   }
 }
 
@@ -152,15 +115,11 @@ async function loadAllCards() {
    CATEGORY TABS
    ============================================================ */
 function updateCatCounts() {
-  // Total
-  const allCount = allCards.reduce((s, c) => s + c.stock, 0);
+  const allCount = allCards.reduce((s,c) => s + c.stock, 0);
   const elAll = document.getElementById('cat-count-all');
   if (elAll) elAll.textContent = allCount;
-
-  // Par feuille
   SHEETS.forEach(sheet => {
-    const sheetCards = allCards.filter(c => c.sheet === sheet.name);
-    const count = sheetCards.reduce((s, c) => s + c.stock, 0);
+    const count = allCards.filter(c => c.sheet === sheet.name).reduce((s,c) => s + c.stock, 0);
     const el = document.getElementById(`cat-count-${sheet.name}`);
     if (el) el.textContent = count;
   });
@@ -168,52 +127,29 @@ function updateCatCounts() {
 
 function setActiveTab(sheetName) {
   activeFilters.sheet = sheetName;
-
-  // Update tab states
   document.querySelectorAll('.cat-tab').forEach(tab => {
     const isActive = tab.dataset.sheet === sheetName;
     tab.classList.toggle('active', isActive);
-    tab.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    tab.setAttribute('aria-pressed', String(isActive));
   });
-
-  // Update category hero
   const hero = document.getElementById('category-hero');
   if (sheetName) {
     const sheet = SHEETS.find(s => s.name === sheetName);
     const sheetCards = allCards.filter(c => c.sheet === sheetName);
-    const count = sheetCards.reduce((s, c) => s + c.stock, 0);
-    const value = sheetCards.reduce((s, c) => s + c.prixTotal, 0);
-    const top = [...sheetCards].sort((a, b) => b.prix - a.prix)[0];
-
-    document.getElementById('cat-hero-icon').textContent = sheet?.icon || '🃏';
+    const count = sheetCards.reduce((s,c) => s + c.stock, 0);
+    const value = sheetCards.reduce((s,c) => s + c.prixTotal, 0);
+    const top   = [...sheetCards].sort((a,b) => b.prix - a.prix)[0];
+    document.getElementById('cat-hero-icon').textContent  = sheet?.icon || '🃏';
     document.getElementById('cat-hero-title').textContent = sheet?.label || sheetName;
     document.getElementById('cat-hero-count').textContent = `${count} exemplaire${count > 1 ? 's' : ''}`;
     document.getElementById('cat-hero-value').textContent = formatPrix(value);
-    document.getElementById('cat-hero-top').textContent = top ? `Top : ${formatPrix(top.prix)}` : '';
+    document.getElementById('cat-hero-top').textContent   = top ? `Top : ${formatPrix(top.prix)}` : '';
     hero.hidden = false;
   } else {
     hero.hidden = true;
   }
-
-  // Reset bloc filter options for this sheet
   repopulateBlocFilter(sheetName);
   applyFilters();
-}
-
-function repopulateBlocFilter(sheetName) {
-  const blocSel = document.getElementById('filter-bloc');
-  const currentVal = blocSel.value;
-  blocSel.innerHTML = '<option value="">Tous les blocs</option>';
-  const source = sheetName ? allCards.filter(c => c.sheet === sheetName) : allCards;
-  const blocs = [...new Set(source.map(c => c.bloc).filter(Boolean))].sort();
-  blocs.forEach(b => {
-    const opt = document.createElement('option');
-    opt.value = b; opt.textContent = b;
-    blocSel.appendChild(opt);
-  });
-  // Restore value if still valid
-  if (blocs.includes(currentVal)) blocSel.value = currentVal;
-  else { blocSel.value = ''; activeFilters.bloc = ''; }
 }
 
 /* ============================================================
@@ -223,30 +159,74 @@ function populateFilters() {
   repopulateBlocFilter('');
 }
 
+function repopulateBlocFilter(sheetName) {
+  const blocSel  = document.getElementById('filter-bloc');
+  const serieSel = document.getElementById('filter-serie');
+  const prevBloc = blocSel.value;
+
+  blocSel.innerHTML = '<option value="">Tous les blocs</option>';
+  serieSel.innerHTML = '<option value="">Toutes les séries</option>';
+
+  const source = sheetName ? allCards.filter(c => c.sheet === sheetName) : allCards;
+  const blocs  = [...new Set(source.map(c => c.bloc).filter(Boolean))].sort();
+  blocs.forEach(b => {
+    const opt = document.createElement('option');
+    opt.value = b; opt.textContent = b;
+    blocSel.appendChild(opt);
+  });
+
+  if (blocs.includes(prevBloc)) {
+    blocSel.value = prevBloc;
+    updateSerieFilter(prevBloc, sheetName);
+  } else {
+    activeFilters.bloc  = '';
+    activeFilters.serie = '';
+  }
+}
+
+function updateSerieFilter(bloc, sheetName) {
+  const serieSel = document.getElementById('filter-serie');
+  const prevSerie = serieSel.value;
+  serieSel.innerHTML = '<option value="">Toutes les séries</option>';
+
+  if (!bloc) { activeFilters.serie = ''; return; }
+
+  const source = sheetName ? allCards.filter(c => c.sheet === sheetName) : allCards;
+  const series = [...new Set(source.filter(c => c.bloc === bloc).map(c => c.serie).filter(Boolean))].sort();
+  series.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    serieSel.appendChild(opt);
+  });
+
+  if (series.includes(prevSerie)) serieSel.value = prevSerie;
+  else activeFilters.serie = '';
+}
+
 function applyFilters() {
-  const { search, sheet, bloc, etat, sort } = activeFilters;
+  const { search, sheet, bloc, serie, etat, sort } = activeFilters;
   const q = search.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
   filteredCards = allCards.filter(card => {
     if (sheet && card.sheet !== sheet) return false;
     if (bloc  && card.bloc  !== bloc)  return false;
+    if (serie && card.serie !== serie) return false;
     if (etat  && card.etat  !== etat)  return false;
     if (q) {
-      const haystack = (card.nom + ' ' + card.serie + ' ' + card.numero + ' ' + card.attribut)
+      const h = (card.nom+' '+card.serie+' '+card.numero+' '+card.attribut)
         .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      if (!haystack.includes(q)) return false;
+      if (!h.includes(q)) return false;
     }
     return true;
   });
 
-  // Sort
   filteredCards.sort((a, b) => {
     switch (sort) {
-      case 'prix-desc':   return b.prix - a.prix;
-      case 'prix-asc':    return a.prix - b.prix;
-      case 'annee-desc':  return (parseInt(b.annee) || 0) - (parseInt(a.annee) || 0);
-      case 'annee-asc':   return (parseInt(a.annee) || 0) - (parseInt(b.annee) || 0);
-      default:            return a.nom.localeCompare(b.nom, 'fr');
+      case 'prix-desc':  return b.prix - a.prix;
+      case 'prix-asc':   return a.prix - b.prix;
+      case 'annee-desc': return (parseInt(b.annee)||0) - (parseInt(a.annee)||0);
+      case 'annee-asc':  return (parseInt(a.annee)||0) - (parseInt(b.annee)||0);
+      default:           return a.nom.localeCompare(b.nom, 'fr');
     }
   });
 
@@ -258,20 +238,13 @@ function applyFilters() {
    RENDER
    ============================================================ */
 function renderCards() {
-  const grid = document.getElementById('card-grid');
+  const grid  = document.getElementById('card-grid');
   const empty = document.getElementById('empty-state');
   grid.innerHTML = '';
-
-  if (filteredCards.length === 0) {
-    empty.hidden = false;
-    return;
-  }
+  if (filteredCards.length === 0) { empty.hidden = false; return; }
   empty.hidden = true;
-
   const frag = document.createDocumentFragment();
-  filteredCards.forEach(card => {
-    frag.appendChild(createCardEl(card));
-  });
+  filteredCards.forEach(card => frag.appendChild(createCardEl(card)));
   grid.appendChild(frag);
 }
 
@@ -282,16 +255,15 @@ function createCardEl(card) {
   el.setAttribute('tabindex', '0');
   el.setAttribute('aria-label', `${card.nom}, ${card.serie}`);
 
-  const etatClass = ETAT_CLASS[card.etat] || 'etat-played';
-  const etatLabel = ETAT_LABEL[card.etat] || card.etat;
+  const etatClass  = ETAT_CLASS[card.etat] || 'etat-played';
+  const etatLabel  = ETAT_LABEL[card.etat] || card.etat;
   const isHighPrice = card.prix >= 50;
-
-  // Only show sheet badge when viewing "Tout" (all sheets)
-  const showBadge = !activeFilters.sheet;
-  const sheetInfo = SHEETS.find(s => s.name === card.sheet);
+  const showBadge  = !activeFilters.sheet;
+  const sheetInfo  = SHEETS.find(s => s.name === card.sheet);
 
   const imgContent = card.image
-    ? `<img src="${escHtml(card.image)}" alt="${escHtml(card.nom)}" loading="lazy" onerror="this.parentElement.innerHTML=getPlaceholderSvg()">`
+    ? `<img src="${escHtml(card.image)}" alt="${escHtml(card.nom)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.hidden=false">
+       <div class="card-image-placeholder" hidden>${svgCardIcon()}<span>${escHtml(card.numero)}</span></div>`
     : `<div class="card-image-placeholder">${svgCardIcon()}<span>${escHtml(card.numero)}</span></div>`;
 
   el.innerHTML = `
@@ -307,11 +279,10 @@ function createCardEl(card) {
       <span class="card-etat-badge ${etatClass}">${etatLabel}</span>
       <span class="card-price ${isHighPrice ? 'is-high' : ''}">${formatPrix(card.prix)}</span>
       ${card.stock > 1 ? `<span class="card-stock-badge">×${card.stock}</span>` : ''}
-    </div>
-  `;
+    </div>`;
 
   el.addEventListener('click', () => openModal(card));
-  el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openModal(card); });
+  el.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') openModal(card); });
   return el;
 }
 
@@ -319,92 +290,71 @@ function createCardEl(card) {
    STATS
    ============================================================ */
 function updateStats() {
-  const totalCards = allCards.reduce((s, c) => s + c.stock, 0);
-  const totalValue = allCards.reduce((s, c) => s + c.prixTotal, 0);
-  const nmCards = allCards.filter(c => c.etat === 'Nmint/Mint' || c.etat === 'GEM Mint').reduce((s,c) => s+c.stock, 0);
-  const topCard = [...allCards].sort((a,b) => b.prix - a.prix)[0];
+  const totalCards = allCards.reduce((s,c) => s + c.stock, 0);
+  const totalValue = allCards.reduce((s,c) => s + c.prixTotal, 0);
+  const nmCards    = allCards.filter(c => c.etat==='Nmint/Mint'||c.etat==='GEM Mint').reduce((s,c) => s+c.stock, 0);
+  const topCard    = [...allCards].sort((a,b) => b.prix-a.prix)[0];
 
   document.getElementById('total-cards-count').textContent = totalCards;
-  document.getElementById('total-value').textContent = formatPrix(totalValue);
-  document.getElementById('stat-nm').textContent = nmCards;
-  document.getElementById('stat-sheets').textContent = SHEETS.length;
-  document.getElementById('stat-top-value').textContent = topCard ? formatPrix(topCard.prix) : '—';
-  document.getElementById('stat-last-updated').textContent = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
-  document.getElementById('footer-date').textContent = `Mis à jour le ${new Date().toLocaleDateString('fr-FR')}`;
+  document.getElementById('total-value').textContent       = formatPrix(totalValue);
+  document.getElementById('stat-nm').textContent           = nmCards;
+  document.getElementById('stat-sheets').textContent       = SHEETS.length;
+  document.getElementById('stat-top-value').textContent    = topCard ? formatPrix(topCard.prix) : '—';
+  document.getElementById('stat-last-updated').textContent = new Date().toLocaleDateString('fr-FR', {day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('footer-date').textContent       = `Mis à jour le ${new Date().toLocaleDateString('fr-FR')}`;
 }
 
 function updateResultCount() {
-  const el = document.getElementById('results-count');
-  const total = filteredCards.reduce((s, c) => s + c.stock, 0);
-  el.textContent = `${filteredCards.length} cartes · ${total} exemplaires`;
+  const total = filteredCards.reduce((s,c) => s + c.stock, 0);
+  document.getElementById('results-count').textContent = `${filteredCards.length} cartes · ${total} exemplaires`;
 }
 
 /* ============================================================
-   MODAL
+   MODAL — CARTE DÉTAIL
    ============================================================ */
 function openModal(card) {
   document.getElementById('modal-sheet').textContent = card.sheet;
   document.getElementById('modal-title').textContent = card.nom;
 
-  // Image
-  const img = document.getElementById('modal-img');
-  img.src = card.image || '';
-  img.alt = card.nom;
-  img.style.display = card.image ? '' : 'none';
+  const img         = document.getElementById('modal-img');
+  const placeholder = document.getElementById('modal-img-placeholder');
+  if (card.image) {
+    img.src           = card.image;
+    img.alt           = card.nom;
+    img.style.display = '';
+    img.hidden        = false;
+    placeholder.hidden = true;
+    img.onerror = () => { img.hidden = true; placeholder.hidden = false; };
+  } else {
+    img.hidden         = true;
+    placeholder.hidden = false;
+  }
 
-  // Attributs
   const attrsEl = document.getElementById('modal-attrs');
   attrsEl.innerHTML = '';
-  const tags = [card.attribut, card.numero, card.reverseHolo].filter(x => x && x !== '/' && x !== 'Non');
-  tags.forEach(t => {
+  [card.attribut, card.numero, card.reverseHolo].filter(x => x && x !== '/' && x !== 'Non').forEach(t => {
     const span = document.createElement('span');
-    span.className = 'modal-attr-tag';
+    span.className   = 'modal-attr-tag';
     span.textContent = t;
     attrsEl.appendChild(span);
   });
 
-  // Méta
-  const metaEl = document.getElementById('modal-meta');
-  metaEl.innerHTML = `
-    <div class="modal-meta-item">
-      <span class="modal-meta-label">Série</span>
-      <span class="modal-meta-value">${escHtml(card.serie)}</span>
-    </div>
-    <div class="modal-meta-item">
-      <span class="modal-meta-label">Bloc</span>
-      <span class="modal-meta-value">${escHtml(card.bloc)}</span>
-    </div>
-    <div class="modal-meta-item">
-      <span class="modal-meta-label">Année</span>
-      <span class="modal-meta-value">${escHtml(card.annee)}</span>
-    </div>
-    <div class="modal-meta-item">
-      <span class="modal-meta-label">État</span>
-      <span class="modal-meta-value">${escHtml(card.etat)}</span>
-    </div>
-    <div class="modal-meta-item">
-      <span class="modal-meta-label">Stock</span>
-      <span class="modal-meta-value">${card.stock} exemplaire${card.stock > 1 ? 's' : ''}</span>
-    </div>
-    <div class="modal-meta-item">
-      <span class="modal-meta-label">Holo / Reverse</span>
-      <span class="modal-meta-value">${escHtml(card.reverseHolo || 'Non')}</span>
-    </div>
-  `;
+  document.getElementById('modal-meta').innerHTML = `
+    <div class="modal-meta-item"><span class="modal-meta-label">Série</span><span class="modal-meta-value">${escHtml(card.serie)}</span></div>
+    <div class="modal-meta-item"><span class="modal-meta-label">Bloc</span><span class="modal-meta-value">${escHtml(card.bloc)}</span></div>
+    <div class="modal-meta-item"><span class="modal-meta-label">Année</span><span class="modal-meta-value">${escHtml(card.annee)}</span></div>
+    <div class="modal-meta-item"><span class="modal-meta-label">État</span><span class="modal-meta-value">${escHtml(card.etat)}</span></div>
+    <div class="modal-meta-item"><span class="modal-meta-label">Stock</span><span class="modal-meta-value">${card.stock} exemplaire${card.stock>1?'s':''}</span></div>
+    <div class="modal-meta-item"><span class="modal-meta-label">Holo / Reverse</span><span class="modal-meta-value">${escHtml(card.reverseHolo||'Non')}</span></div>`;
 
-  // Prix
-  document.getElementById('modal-price-unit').textContent = formatPrix(card.prix);
+  document.getElementById('modal-price-unit').textContent  = formatPrix(card.prix);
   document.getElementById('modal-price-total').textContent = formatPrix(card.prixTotal);
 
-  // Lien Cardmarket
-  const cmLink = document.getElementById('modal-cardmarket-link');
-  const cmQuery = encodeURIComponent(card.nom);
   const cmEtat = ETAT_CM[card.etat] || 2;
-  cmLink.href = `https://www.cardmarket.com/fr/Pokemon/Products/Search?searchString=${cmQuery}&minCondition=${cmEtat}&language=2&sortBy=price_asc`;
+  document.getElementById('modal-cardmarket-link').href =
+    `https://www.cardmarket.com/fr/Pokemon/Products/Search?searchString=${encodeURIComponent(card.nom)}&minCondition=${cmEtat}&language=2&sortBy=price_asc`;
 
-  // Ouvrir
-  const overlay = document.getElementById('modal-overlay');
-  overlay.hidden = false;
+  document.getElementById('modal-overlay').hidden = false;
   document.body.style.overflow = 'hidden';
   setTimeout(() => document.getElementById('modal-close').focus(), 50);
 }
@@ -415,22 +365,118 @@ function closeModal() {
 }
 
 /* ============================================================
+   MODAL — AJOUTER UNE CARTE
+   ============================================================ */
+function openAddModal() {
+  const warning = document.getElementById('form-script-warning');
+  warning.hidden = !!APPS_SCRIPT_URL; // Cacher si URL configurée
+
+  // Peupler les blocs dans le formulaire
+  const blocSel = document.getElementById('f-bloc');
+  blocSel.innerHTML = '<option value="">— Choisir un bloc —</option>';
+  Object.keys(BLOCS_SERIES).sort().forEach(b => {
+    const opt = document.createElement('option');
+    opt.value = b; opt.textContent = b;
+    blocSel.appendChild(opt);
+  });
+
+  document.getElementById('add-modal-notice').hidden = true;
+  document.getElementById('add-card-form').reset();
+  document.getElementById('f-serie').innerHTML = '<option value="">— Choisir d\'abord un bloc —</option>';
+
+  document.getElementById('add-modal-overlay').hidden = false;
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('f-nom').focus(), 50);
+}
+
+function closeAddModal() {
+  document.getElementById('add-modal-overlay').hidden = true;
+  document.body.style.overflow = '';
+}
+
+function showAddNotice(msg, type = 'info') {
+  const el   = document.getElementById('add-modal-notice');
+  const text = document.getElementById('add-notice-text');
+  el.className = `add-notice add-notice-${type}`;
+  text.textContent = msg;
+  el.hidden = false;
+}
+
+async function submitAddCard(e) {
+  e.preventDefault();
+
+  if (!APPS_SCRIPT_URL) {
+    showAddNotice('Configure d\'abord le Google Apps Script (voir apps-script.gs).', 'error');
+    return;
+  }
+
+  const btn     = document.getElementById('add-submit-btn');
+  const label   = document.getElementById('add-submit-label');
+  const spinner = document.getElementById('add-submit-spinner');
+
+  btn.disabled   = true;
+  label.hidden   = true;
+  spinner.hidden = false;
+
+  const card = {
+    nom:        document.getElementById('f-nom').value.trim(),
+    attribut:   document.getElementById('f-attribut').value.trim(),
+    numero:     document.getElementById('f-numero').value.trim(),
+    annee:      document.getElementById('f-annee').value.trim(),
+    bloc:       document.getElementById('f-bloc').value,
+    serie:      document.getElementById('f-serie').value,
+    reverseHolo:document.getElementById('f-reverse').value,
+    etat:       document.getElementById('f-etat').value,
+    stock:      document.getElementById('f-stock').value,
+    prix:       document.getElementById('f-prix').value,
+    image:      document.getElementById('f-image').value.trim(),
+  };
+
+  const sheet = document.getElementById('f-sheet').value;
+
+  try {
+    const res  = await fetch(APPS_SCRIPT_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ action: 'addCard', card, sheet }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showAddNotice(`✓ ${data.message}`, 'success');
+      document.getElementById('add-card-form').reset();
+      // Recharger les cartes après 1.5s
+      setTimeout(() => { closeAddModal(); loadAllCards(); }, 1500);
+    } else {
+      showAddNotice(data.error || 'Erreur inconnue', 'error');
+    }
+  } catch (err) {
+    showAddNotice(`Erreur réseau : ${err.message}`, 'error');
+  } finally {
+    btn.disabled   = false;
+    label.hidden   = false;
+    spinner.hidden = true;
+  }
+}
+
+/* ============================================================
    UI STATE HELPERS
    ============================================================ */
 function showLoading() {
   document.getElementById('loading-state').style.display = '';
-  document.getElementById('error-state').hidden = true;
+  document.getElementById('error-state').hidden  = true;
   document.getElementById('main-content').hidden = true;
 }
 function showMain() {
   document.getElementById('loading-state').style.display = 'none';
-  document.getElementById('error-state').hidden = true;
+  document.getElementById('error-state').hidden  = true;
   document.getElementById('main-content').hidden = false;
 }
 function showError(msg) {
   document.getElementById('loading-state').style.display = 'none';
-  document.getElementById('error-state').hidden = false;
+  document.getElementById('error-state').hidden  = false;
   document.getElementById('error-message').textContent = msg;
+  document.getElementById('main-content').hidden = true;
 }
 
 /* ============================================================
@@ -438,7 +484,7 @@ function showError(msg) {
    ============================================================ */
 function formatPrix(n) {
   if (!n && n !== 0) return '—';
-  return n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n.toLocaleString('fr-FR', { style:'currency', currency:'EUR', minimumFractionDigits:2, maximumFractionDigits:2 });
 }
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -446,10 +492,9 @@ function escHtml(s) {
 function svgCardIcon() {
   return `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="2" width="18" height="20" rx="2"/><circle cx="12" cy="11" r="3"/></svg>`;
 }
-window.getPlaceholderSvg = () => `<div class="card-image-placeholder">${svgCardIcon()}<span>—</span></div>`;
 
 /* ============================================================
-   DARK MODE TOGGLE
+   DARK MODE
    ============================================================ */
 (function(){
   const t = document.querySelector('[data-theme-toggle]');
@@ -461,46 +506,42 @@ window.getPlaceholderSvg = () => `<div class="card-image-placeholder">${svgCardI
     t.innerHTML = d === 'dark'
       ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`
       : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
-    t.setAttribute('aria-label', `Passer en mode ${d === 'dark' ? 'clair' : 'sombre'}`);
+    t.setAttribute('aria-label', `Passer en mode ${d==='dark'?'clair':'sombre'}`);
   }
   updateIcon();
-  if (t) t.addEventListener('click', () => {
-    d = d === 'dark' ? 'light' : 'dark';
-    r.setAttribute('data-theme', d);
-    updateIcon();
-  });
+  if (t) t.addEventListener('click', () => { d = d==='dark'?'light':'dark'; r.setAttribute('data-theme',d); updateIcon(); });
 })();
 
 /* ============================================================
    EVENT LISTENERS
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
-  // Chargement
   loadAllCards();
   document.getElementById('retry-btn')?.addEventListener('click', loadAllCards);
 
   // Category tabs
   document.querySelectorAll('.cat-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      const sheet = tab.dataset.sheet;
-      setActiveTab(sheet);
-    });
+    tab.addEventListener('click', () => setActiveTab(tab.dataset.sheet));
   });
 
-  // Recherche
+  // Search
   const searchInput = document.getElementById('search-input');
   let searchTimeout;
   searchInput.addEventListener('input', () => {
     clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-      activeFilters.search = searchInput.value;
-      applyFilters();
-    }, 200);
+    searchTimeout = setTimeout(() => { activeFilters.search = searchInput.value; applyFilters(); }, 200);
   });
 
-  // Filtres selects
+  // Filtre Bloc → met à jour Série
   document.getElementById('filter-bloc').addEventListener('change', e => {
-    activeFilters.bloc = e.target.value; applyFilters();
+    activeFilters.bloc  = e.target.value;
+    activeFilters.serie = '';
+    updateSerieFilter(e.target.value, activeFilters.sheet);
+    document.getElementById('filter-serie').value = '';
+    applyFilters();
+  });
+  document.getElementById('filter-serie').addEventListener('change', e => {
+    activeFilters.serie = e.target.value; applyFilters();
   });
   document.getElementById('filter-etat').addEventListener('change', e => {
     activeFilters.etat = e.target.value; applyFilters();
@@ -509,24 +550,47 @@ document.addEventListener('DOMContentLoaded', () => {
     activeFilters.sort = e.target.value; applyFilters();
   });
 
-  // Reset filters
+  // Reset
   function resetFilters() {
-    activeFilters = { search: '', sheet: activeFilters.sheet, bloc: '', etat: '', sort: 'nom' };
-    document.getElementById('search-input').value = '';
-    document.getElementById('filter-bloc').value = '';
-    document.getElementById('filter-etat').value = '';
-    document.getElementById('filter-sort').value = 'nom';
+    activeFilters = { search:'', sheet:activeFilters.sheet, bloc:'', serie:'', etat:'', sort:'nom' };
+    document.getElementById('search-input').value   = '';
+    document.getElementById('filter-bloc').value    = '';
+    document.getElementById('filter-serie').value   = '';
+    document.getElementById('filter-etat').value    = '';
+    document.getElementById('filter-sort').value    = 'nom';
+    repopulateBlocFilter(activeFilters.sheet);
     applyFilters();
   }
   document.getElementById('reset-filters')?.addEventListener('click', resetFilters);
   document.getElementById('reset-filters-2')?.addEventListener('click', resetFilters);
 
-  // Modal
+  // Modal carte
   document.getElementById('modal-close')?.addEventListener('click', closeModal);
-  document.getElementById('modal-overlay')?.addEventListener('click', e => {
-    if (e.target === e.currentTarget) closeModal();
+  document.getElementById('modal-overlay')?.addEventListener('click', e => { if (e.target===e.currentTarget) closeModal(); });
+
+  // Modal ajouter
+  document.getElementById('add-card-btn')?.addEventListener('click', openAddModal);
+  document.getElementById('add-modal-close')?.addEventListener('click', closeAddModal);
+  document.getElementById('add-modal-cancel')?.addEventListener('click', closeAddModal);
+  document.getElementById('add-modal-overlay')?.addEventListener('click', e => { if (e.target===e.currentTarget) closeAddModal(); });
+  document.getElementById('add-card-form')?.addEventListener('submit', submitAddCard);
+
+  // Cascade Bloc → Série dans le formulaire
+  document.getElementById('f-bloc')?.addEventListener('change', e => {
+    const bloc    = e.target.value;
+    const serieSel = document.getElementById('f-serie');
+    serieSel.innerHTML = '<option value="">— Choisir une série —</option>';
+    if (bloc && BLOCS_SERIES[bloc]) {
+      BLOCS_SERIES[bloc].forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s; opt.textContent = s;
+        serieSel.appendChild(opt);
+      });
+    }
   });
+
+  // Escape ferme les modals
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Escape') { closeModal(); closeAddModal(); }
   });
 });
