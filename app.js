@@ -385,6 +385,8 @@ async function saveEditCard() {
   saveBtn.disabled = true;
   saveBtn.textContent = '...';
 
+  const bloc = document.getElementById('e-bloc').value;
+  const serie = document.getElementById('e-serie').value; 
   const image  = document.getElementById('e-image').value.trim();
   const prix   = parseFloat(document.getElementById('e-prix').value) || 0;
   const stock  = parseInt(document.getElementById('e-stock').value) || 0;
@@ -408,7 +410,7 @@ async function saveEditCard() {
         'Content-Type':  'application/json',
         'Prefer':        'return=minimal',
       },
-      body: JSON.stringify({ image, prix, stock, prix_total: prix * stock, etat }),
+      body: JSON.stringify({ bloc, serie, image, prix, stock, prix_total: prix * stock, etat }),
     });
 
     if (res.ok) {
@@ -425,7 +427,7 @@ async function saveEditCard() {
       // Mettre à jour dans allCards
       const idx = allCards.findIndex(c => c.nom === currentEditCard.nom && c.numero === currentEditCard.numero && c.sheet === currentEditCard.sheet);
       if (idx !== -1) {
-        allCards[idx] = { ...allCards[idx], image, prix, stock, prixTotal: prix * stock, etat };
+        allCards[idx] = { ...allCards[idx], bloc, serie, image, prix, stock, prixTotal: prix * stock, etat };
       }
 
       const noticeEl = document.getElementById('modal-edit-notice');
