@@ -1,85 +1,135 @@
 // ============================================================
 // GOOGLE APPS SCRIPT — Ma Collection Pokémon
 // À coller dans : Extensions > Apps Script de ton Google Sheets
-// Puis : Déployer > Nouveau déploiement > Application Web
+// Puis : Déployer > Gérer les déploiements > Créer une nouvelle version
 //   - Exécuter en tant que : Moi
 //   - Accès : Tout le monde
-// Copier l'URL générée et la coller dans app.js (APPS_SCRIPT_URL)
 // ============================================================
 
 const SHEET_NAMES = ['Divers', 'Reverses', 'Holo', 'Evolitions', 'Pikachu family', 'Zarbi'];
 
-// Répondre aux requêtes OPTIONS (CORS preflight)
-function doOptions(e) {
-  return ContentService.createTextOutput('')
-    .setMimeType(ContentService.MimeType.TEXT)
-    .setHeaders({
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    });
+// Colonnes par feuille : index 0-based dans le tableur
+// A=0 index, B=1 nom, C=2 attribut, D=3 numéro, E=4 année,
+// F=5 bloc, G=6 série, H=7 reverse, I=8 stock, J=9 état, K=10 prix/u
+// L=11 prix vente OU image (selon feuille), M=12 image OU vide
+
+function doGet(e) {
+  const action = e.parameter.action;
+
+  if (action === 'getCards') {
+    try {
+      const cards = getAllCards();
+      return jsonResponse({ success: true, cards });
+    } catch (err) {
+      return jsonResponse({ success: false, error: err.message });
+    }
+  }
+
+  if (action === 'ping') {
+    return jsonResponse({ success: true, message: 'OK' });
+  }
+
+  return jsonResponse({ success: false, error: 'Action inconnue' });
 }
 
 function doPost(e) {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Content-Type': 'application/json',
-  };
-
   try {
     const data = JSON.parse(e.postData.contents);
-    const action = data.action;
 
-    if (action === 'addCard') {
+    if (data.action === 'addCard') {
       const result = addCard(data.card, data.sheet);
-      return respond({ success: true, message: result }, headers);
+      return jsonResponse({ success: true, message: result });
     }
 
-    return respond({ success: false, error: 'Action inconnue' }, headers);
-
+    return jsonResponse({ success: false, error: 'Action inconnue' });
   } catch (err) {
-    return respond({ success: false, error: err.message }, headers);
+    return jsonResponse({ success: false, error: err.message });
   }
 }
 
-function doGet(e) {
-  const headers = { 'Access-Control-Allow-Origin': '*' };
-  const action = e.parameter.action;
-
-  if (action === 'ping') {
-    return respond({ success: true, message: 'OK' }, headers);
-  }
-
-  return respond({ success: false, error: 'Action inconnue' }, headers);
-}
-
-function respond(data, headers) {
-  const output = ContentService.createTextOutput(JSON.stringify(data))
+function jsonResponse(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
-  // Note: setHeaders n'existe pas sur ContentService, CORS géré via doOptions
-  return output;
 }
 
+// ============================================================
+// LECTURE — renvoie toutes les cartes de toutes les feuilles
+// ============================================================
+function getAllCards() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const allCards = [];
+
+  for (const sheetName of SHEET_NAMES) {
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) continue;
+
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 5) continue; // pas de données
+
+    const data = sheet.getRange(5, 1, lastRow - 4, 13).getValues();
+
+    for (const row of data) {
+      const nom = String(row[1] || '').trim();
+      if (!nom) continue;
+
+      const stock = parseInt(row[8]) || 0;
+      if (stock <= 0) continue; // on n'affiche que les cartes en stock
+
+      // Prix : peut être une formule calculée, on récupère la valeur calculée
+      let prix = 0;
+      const prixRaw = row[10];
+      if (typeof prixRaw === 'number') {
+        prix = prixRaw;
+      } else {
+        prix = parseFloat(String(prixRaw).replace('€','').replace(',','.').replace(/\s/g,'')) || 0;
+      }
+
+      // Image : col[11] ou col[12] selon la feuille
+      const c11 = String(row[11] || '').trim();
+      const c12 = String(row[12] || '').trim();
+      const image = c11.startsWith('http') ? c11 : (c12.startsWith('http') ? c12 : '');
+
+      allCards.push({
+        sheet:       sheetName,
+        nom,
+        attribut:    String(row[2] || '').trim(),
+        numero:      String(row[3] || '').trim(),
+        annee:       String(row[4] || '').trim(),
+        bloc:        String(row[5] || '').trim(),
+        serie:       String(row[6] || '').trim(),
+        reverseHolo: String(row[7] || '').trim(),
+        stock,
+        etat:        String(row[9] || '').trim(),
+        prix,
+        prixTotal:   prix * stock,
+        image,
+      });
+    }
+  }
+
+  return allCards;
+}
+
+// ============================================================
+// ÉCRITURE — ajoute une carte dans la bonne feuille
+// ============================================================
 function addCard(card, sheetName) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(sheetName || 'Divers');
-
   if (!sheet) throw new Error(`Feuille "${sheetName}" introuvable`);
 
-  // Trouver le dernier index utilisé (colonne A)
   const lastRow = sheet.getLastRow();
   let maxIndex = 0;
-  if (lastRow > 4) {
+
+  if (lastRow >= 5) {
     const indices = sheet.getRange(5, 1, lastRow - 4, 1).getValues();
     for (const [v] of indices) {
       const n = parseInt(v);
       if (!isNaN(n) && n > maxIndex) maxIndex = n;
     }
-  }
-  const newIndex = maxIndex + 1;
 
-  // Vérifier les doublons (même nom + numéro + feuille)
-  if (lastRow > 4) {
+    // Vérification doublons (nom + numéro)
     const noms    = sheet.getRange(5, 2, lastRow - 4, 1).getValues().flat();
     const numeros = sheet.getRange(5, 4, lastRow - 4, 1).getValues().flat();
     for (let i = 0; i < noms.length; i++) {
@@ -87,42 +137,35 @@ function addCard(card, sheetName) {
         String(noms[i]).trim().toLowerCase() === String(card.nom).trim().toLowerCase() &&
         String(numeros[i]).trim() === String(card.numero).trim()
       ) {
-        throw new Error(`Doublon détecté : "${card.nom}" (${card.numero}) existe déjà dans "${sheetName}"`);
+        throw new Error(`Doublon : "${card.nom}" (${card.numero}) existe déjà dans "${sheetName}"`);
       }
     }
   }
 
-  // Construire la ligne
-  // Colonnes: A=index, B=Nom, C=Attribut, D=Numéro, E=Année, F=Bloc, G=Série, H=Reverse/Holo, I=Stock, J=Etat, K=Prix/u (formule), L=PrixVente, M=Image
   const insertRow = lastRow + 1;
   const prixValue = parseFloat(card.prix) || 0;
-
-  // Formule prix = prix_unitaire * stock (structure à conserver selon les instructions)
   const stockCell = `I${insertRow}`;
   const prixFormule = prixValue > 0 ? `=${prixValue}*${stockCell}` : 0;
 
-  const newRow = [
-    newIndex,              // A - Index
-    card.nom || '',        // B - Nom
-    card.attribut || '',   // C - Attribut supp.
-    card.numero || '',     // D - Numéro
-    card.annee || '',      // E - Année
-    card.bloc || '',       // F - Bloc
-    card.serie || '',      // G - Série
-    card.reverseHolo || 'Non', // H - Reverse/Holo
-    parseInt(card.stock) || 1, // I - Stock
-    card.etat || 'Nmint/Mint', // J - Etat
-    prixFormule,           // K - Prix/u (formule ou 0)
-    '',                    // L - Prix de vente
-    card.image || '',      // M - Image URL
-  ];
+  sheet.appendRow([
+    maxIndex + 1,
+    card.nom || '',
+    card.attribut || '',
+    card.numero || '',
+    card.annee || '',
+    card.bloc || '',
+    card.serie || '',
+    card.reverseHolo || 'Non',
+    parseInt(card.stock) || 1,
+    card.etat || 'Nmint/Mint',
+    prixFormule,
+    '',
+    card.image || '',
+  ]);
 
-  sheet.appendRow(newRow);
-
-  // Formater la cellule prix comme monnaie si elle contient une valeur
   if (prixValue > 0) {
     sheet.getRange(insertRow, 11).setNumberFormat('# ##0.00 €');
   }
 
-  return `Carte "${card.nom}" ajoutée avec succès dans "${sheetName}" (ligne ${insertRow})`;
+  return `"${card.nom}" ajoutée dans "${sheetName}" (ligne ${insertRow})`;
 }

@@ -38,70 +38,25 @@ let filteredCards = [];
 let activeFilters = { search: '', sheet: '', bloc: '', serie: '', etat: '', sort: 'nom' };
 
 /* ============================================================
-   DATA FETCHING — export CSV public (bypass auth Google)
+   DATA FETCHING — via Apps Script (proxy Google Sheets, zéro CORS)
    ============================================================ */
-async function fetchSheet(sheet) {
-  const cacheBust = Math.floor(Date.now() / 300000);
-  // gviz/tq : répond directement sans redirect 307, CORS ok depuis GitHub Pages
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${sheet.gid}&_=${cacheBust}`;
-  const res = await fetch(url, { credentials: 'omit' });
-  if (!res.ok) throw new Error(`HTTP ${res.status} pour ${sheet.name}`);
-  const text = await res.text();
-  return parseCSV(text, sheet.name);
-}
-
-function parseCSV(text, sheetName) {
-  const lines = text.split(/\r?\n/);
-  const cards = [];
-  for (const line of lines) {
-    if (!line.trim()) continue;
-    const cells = splitCSVLine(line);
-    const nom = (cells[1] || '').trim();
-    if (!nom || nom === 'Nom' || nom === 'Attribut supp.') continue;
-    const stock = parseInt(cells[8]) || 0;
-    const etat  = (cells[9] || '').trim();
-    const prixStr = (cells[10] || '').replace('€','').replace(',','.').replace(/\s/g,'').trim();
-    const prix  = parseFloat(prixStr) || 0;
-    // L'image est en col[11] ou col[12] selon la feuille — on prend la première URL trouvée
-    const image = [cells[11], cells[12]].map(c => (c||'').trim()).find(c => c.startsWith('http')) || '';
-    if (!nom) continue;
-    cards.push({
-      sheet: sheetName, nom,
-      attribut:    (cells[2]||'').trim(),
-      numero:      (cells[3]||'').trim(),
-      annee:       (cells[4]||'').trim(),
-      bloc:        (cells[5]||'').trim(),
-      serie:       (cells[6]||'').trim(),
-      reverseHolo: (cells[7]||'').trim(),
-      stock, etat, prix,
-      prixTotal: prix * stock,
-      image,
-    });
-  }
-  return cards;
-}
-
-function splitCSVLine(line) {
-  const result = [];
-  let current = '', inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
-      if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
-      else inQuotes = !inQuotes;
-    } else if (ch === ',' && !inQuotes) {
-      result.push(current); current = '';
-    } else current += ch;
-  }
-  result.push(current);
-  return result;
-}
-
 async function loadAllCards() {
   showLoading();
+
+  if (!APPS_SCRIPT_URL) {
+    showError('APPS_SCRIPT_URL non configurée');
+    return;
+  }
+
   try {
-    const results = await Promise.all(SHEETS.map(s => fetchSheet(s)));
-    allCards = results.flat().filter(c => c.stock > 0);
+    const cacheBust = Math.floor(Date.now() / 300000);
+    const url = `${APPS_SCRIPT_URL}?action=getCards&_=${cacheBust}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Erreur inconnue');
+
+    allCards = data.cards;
     populateFilters();
     updateStats();
     updateCatCounts();
