@@ -216,7 +216,8 @@ function renderCards() {
   const grid  = document.getElementById('card-grid');
   const empty = document.getElementById('empty-state');
   grid.innerHTML = '';
-  if (filteredCards.length === 0) { empty.hidden = false; return; }
+  // N'afficher empty-state que si les données sont chargées ET aucun résultat
+  if (filteredCards.length === 0 && allCards.length > 0) { empty.hidden = false; return; }
   empty.hidden = true;
   const frag = document.createDocumentFragment();
   filteredCards.forEach(card => frag.appendChild(createCardEl(card)));
