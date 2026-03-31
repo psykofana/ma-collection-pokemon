@@ -58,9 +58,20 @@ async function fetchSheet(sheetName, gid) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Erreur HTTP ${res.status} pour ${sheetName}`);
   const text = await res.text();
-  // Google wraps the JSON in google.visualization.Query.setResponse(...)
-  const json = JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1));
+  // Google wraps JSON in google.visualization.Query.setResponse({...});
+  // The response also starts with /*O_o*/ — find the first { and last }
+  const start = text.indexOf('{');
+  const end   = text.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error(`Réponse invalide pour ${sheetName}`);
+  const json = JSON.parse(text.substring(start, end + 1));
   return parseSheetData(json, sheetName);
+}
+
+function cellVal(c) {
+  // Extract raw value from a gviz cell object
+  // Numbers arrive as {v: 3.0, f: "3,00 €"}, strings as {v: "text"}, null cells as null
+  if (!c || c.v === null || c.v === undefined) return '';
+  return c.v; // Return raw value (number or string)
 }
 
 function parseSheetData(json, sheetName) {
@@ -69,28 +80,45 @@ function parseSheetData(json, sheetName) {
 
   for (const row of rows) {
     if (!row.c) continue;
-    const cells = row.c.map(c => (c && c.v !== null && c.v !== undefined) ? String(c.v).trim() : '');
+    // Get raw values from cells (numbers stay as numbers, strings as strings)
+    const raw = row.c.map(cellVal);
 
     // Colonnes: [0]=index, [1]=Nom, [2]=Attribut, [3]=Numéro, [4]=Année,
     //           [5]=Bloc, [6]=Série, [7]=Reverse/Holo, [8]=Stock, [9]=Etat, [10]=Prix/u, [11]=PrixVente, [12]=Image
-    const nom = cells[1] || '';
-    if (!nom || nom === 'Nom') continue; // skip headers & empty
+    const nom = (raw[1] !== '' ? String(raw[1]).trim() : '');
+    if (!nom || nom === 'Nom' || nom === 'Attribut supp.') continue; // skip headers & empty
 
-    const stock = parseInt(cells[8]) || 0;
-    const etat  = cells[9] || '';
-    const prixStr = (cells[10] || '0').replace('€','').replace(',','.').replace(/\s/g,'').trim();
-    const prix  = parseFloat(prixStr) || 0;
-    const image = cells[12] || '';
+    // Stock — gviz returns float (e.g. 1.0), convert to int
+    const stockRaw = raw[8];
+    const stock = (typeof stockRaw === 'number') ? Math.round(stockRaw) : (parseInt(String(stockRaw)) || 0);
+
+    // État
+    const etat = raw[9] !== '' ? String(raw[9]).trim() : '';
+
+    // Prix unitaire — gviz returns float already (e.g. 3.0)
+    const prixRaw = raw[10];
+    let prix = 0;
+    if (typeof prixRaw === 'number') {
+      prix = prixRaw;
+    } else if (prixRaw !== '') {
+      prix = parseFloat(String(prixRaw).replace('€','').replace(',','.').replace(/\s/g,'').trim()) || 0;
+    }
+
+    // Image URL (column M, index 12)
+    const image = raw[12] !== '' ? String(raw[12]).trim() : '';
+
+    // Skip lignes fantômes (pas de nom réel)
+    if (!nom) continue;
 
     cards.push({
       sheet:       sheetName,
       nom:         nom,
-      attribut:    cells[2] || '',
-      numero:      cells[3] || '',
-      annee:       cells[4] || '',
-      bloc:        cells[5] || '',
-      serie:       cells[6] || '',
-      reverseHolo: cells[7] || '',
+      attribut:    raw[2] !== '' ? String(raw[2]).trim() : '',
+      numero:      raw[3] !== '' ? String(raw[3]).trim() : '',
+      annee:       raw[4] !== '' ? String(raw[4]).trim() : '',
+      bloc:        raw[5] !== '' ? String(raw[5]).trim() : '',
+      serie:       raw[6] !== '' ? String(raw[6]).trim() : '',
+      reverseHolo: raw[7] !== '' ? String(raw[7]).trim() : '',
       stock:       stock,
       etat:        etat,
       prix:        prix,
