@@ -361,6 +361,8 @@ let currentModalCard = null;
 
 function openEditForm(card) {
   currentEditCard = card;
+  document.getElementById('e-bloc').value = card.bloc || '';
+  document.getElementById('e-serie').value = card.serie || ''; 
   document.getElementById('e-image').value = card.image || '';
   document.getElementById('e-prix').value  = card.prix || '';
   document.getElementById('e-stock').value = card.stock || 1;
