@@ -48,7 +48,7 @@
       <div class="stat-divider"></div>
       <div class="stat-item">
         <span class="stat-big" id="stat-sheets">—</span>
-        <span class="stat-desc">Feuilles</span>
+        <span class="stat-desc">Catégories</span>
       </div>
       <div class="stat-divider"></div>
       <div class="stat-item">
@@ -63,6 +63,64 @@
     </div>
   </section>
 
+  <!-- CATEGORY TABS -->
+  <nav class="category-nav" aria-label="Catégories">
+    <div class="category-nav-inner">
+      <button class="cat-tab active" data-sheet="" aria-pressed="true">
+        <span class="cat-icon">✦</span>
+        <span class="cat-label">Tout</span>
+        <span class="cat-count" id="cat-count-all">—</span>
+      </button>
+      <button class="cat-tab" data-sheet="Divers" aria-pressed="false">
+        <span class="cat-icon">🃏</span>
+        <span class="cat-label">Divers</span>
+        <span class="cat-count" id="cat-count-Divers">—</span>
+      </button>
+      <button class="cat-tab" data-sheet="Reverses" aria-pressed="false">
+        <span class="cat-icon">🔄</span>
+        <span class="cat-label">Reverses</span>
+        <span class="cat-count" id="cat-count-Reverses">—</span>
+      </button>
+      <button class="cat-tab" data-sheet="Holo" aria-pressed="false">
+        <span class="cat-icon">✨</span>
+        <span class="cat-label">Holo</span>
+        <span class="cat-count" id="cat-count-Holo">—</span>
+      </button>
+      <button class="cat-tab" data-sheet="Evolitions" aria-pressed="false">
+        <span class="cat-icon">🌀</span>
+        <span class="cat-label">Évolutions</span>
+        <span class="cat-count" id="cat-count-Evolitions">—</span>
+      </button>
+      <button class="cat-tab" data-sheet="Pikachu family" aria-pressed="false">
+        <span class="cat-icon">⚡</span>
+        <span class="cat-label">Pikachu</span>
+        <span class="cat-count" id="cat-count-Pikachu family">—</span>
+      </button>
+      <button class="cat-tab" data-sheet="Zarbi" aria-pressed="false">
+        <span class="cat-icon">❓</span>
+        <span class="cat-label">Zarbi</span>
+        <span class="cat-count" id="cat-count-Zarbi">—</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- CATEGORY HERO (shown when a specific tab is active) -->
+  <div class="category-hero" id="category-hero" hidden>
+    <div class="category-hero-inner">
+      <div class="cat-hero-icon" id="cat-hero-icon"></div>
+      <div class="cat-hero-info">
+        <h1 class="cat-hero-title" id="cat-hero-title"></h1>
+        <div class="cat-hero-stats">
+          <span id="cat-hero-count">—</span>
+          <span class="dot">·</span>
+          <span id="cat-hero-value">—</span>
+          <span class="dot">·</span>
+          <span id="cat-hero-top">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- FILTERS -->
   <section class="filters-section">
     <div class="filters-inner">
@@ -71,9 +129,6 @@
         <input type="text" id="search-input" class="search-input" placeholder="Rechercher une carte…" autocomplete="off">
       </div>
       <div class="filter-group">
-        <select id="filter-sheet" class="filter-select">
-          <option value="">Toutes les feuilles</option>
-        </select>
         <select id="filter-bloc" class="filter-select">
           <option value="">Tous les blocs</option>
         </select>

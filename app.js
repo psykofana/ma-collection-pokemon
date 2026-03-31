@@ -3,12 +3,12 @@
    ============================================================ */
 const SHEET_ID = '13tKsaOj-QwE2b-3FHim0Isacq1Alfe20B8NOLfy02hM';
 const SHEETS = [
-  { name: 'Divers',         gid: '0' },
-  { name: 'Reverses',       gid: '826801908' },
-  { name: 'Holo',           gid: '873497771' },
-  { name: 'Evolitions',     gid: '2001298664' },
-  { name: 'Pikachu family', gid: '149423930' },
-  { name: 'Zarbi',          gid: '44965854' },
+  { name: 'Divers',         gid: '0',          icon: '🃏', label: 'Divers' },
+  { name: 'Reverses',       gid: '826801908',   icon: '🔄', label: 'Reverses' },
+  { name: 'Holo',           gid: '873497771',   icon: '✨', label: 'Holo' },
+  { name: 'Evolitions',     gid: '2001298664',  icon: '🌀', label: 'Évolutions' },
+  { name: 'Pikachu family', gid: '149423930',   icon: '⚡', label: 'Pikachu' },
+  { name: 'Zarbi',          gid: '44965854',    icon: '❓', label: 'Zarbi' },
 ];
 
 // Correspondance état → classe CSS
@@ -53,18 +53,18 @@ let activeFilters = { search: '', sheet: '', bloc: '', etat: '', sort: 'nom' };
 /* ============================================================
    DATA FETCHING
    ============================================================ */
-async function fetchSheet(sheetName, gid) {
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${gid}`;
+async function fetchSheet(sheet) {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${sheet.gid}`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Erreur HTTP ${res.status} pour ${sheetName}`);
+  if (!res.ok) throw new Error(`Erreur HTTP ${res.status} pour ${sheet.name}`);
   const text = await res.text();
   // Google wraps JSON in google.visualization.Query.setResponse({...});
   // The response also starts with /*O_o*/ — find the first { and last }
   const start = text.indexOf('{');
   const end   = text.lastIndexOf('}');
-  if (start === -1 || end === -1) throw new Error(`Réponse invalide pour ${sheetName}`);
+  if (start === -1 || end === -1) throw new Error(`Réponse invalide pour ${sheet.name}`);
   const json = JSON.parse(text.substring(start, end + 1));
-  return parseSheetData(json, sheetName);
+  return parseSheetData(json, sheet.name);
 }
 
 function cellVal(c) {
@@ -132,13 +132,12 @@ function parseSheetData(json, sheetName) {
 async function loadAllCards() {
   showLoading();
   try {
-    const results = await Promise.all(
-      SHEETS.map(s => fetchSheet(s.name, s.gid))
-    );
+    const results = await Promise.all(SHEETS.map(s => fetchSheet(s)));
     allCards = results.flat().filter(c => c.stock > 0); // seulement les cartes en stock
     populateFilters();
-    applyFilters();
     updateStats();
+    updateCatCounts();
+    applyFilters();
     showMain();
   } catch (err) {
     console.error(err);
@@ -147,26 +146,78 @@ async function loadAllCards() {
 }
 
 /* ============================================================
-   FILTERS
+   CATEGORY TABS
    ============================================================ */
-function populateFilters() {
-  // Feuilles
-  const sheetSel = document.getElementById('filter-sheet');
-  const sheets = [...new Set(allCards.map(c => c.sheet))];
-  sheets.forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s; opt.textContent = s;
-    sheetSel.appendChild(opt);
+function updateCatCounts() {
+  // Total
+  const allCount = allCards.reduce((s, c) => s + c.stock, 0);
+  const elAll = document.getElementById('cat-count-all');
+  if (elAll) elAll.textContent = allCount;
+
+  // Par feuille
+  SHEETS.forEach(sheet => {
+    const sheetCards = allCards.filter(c => c.sheet === sheet.name);
+    const count = sheetCards.reduce((s, c) => s + c.stock, 0);
+    const el = document.getElementById(`cat-count-${sheet.name}`);
+    if (el) el.textContent = count;
+  });
+}
+
+function setActiveTab(sheetName) {
+  activeFilters.sheet = sheetName;
+
+  // Update tab states
+  document.querySelectorAll('.cat-tab').forEach(tab => {
+    const isActive = tab.dataset.sheet === sheetName;
+    tab.classList.toggle('active', isActive);
+    tab.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   });
 
-  // Blocs
+  // Update category hero
+  const hero = document.getElementById('category-hero');
+  if (sheetName) {
+    const sheet = SHEETS.find(s => s.name === sheetName);
+    const sheetCards = allCards.filter(c => c.sheet === sheetName);
+    const count = sheetCards.reduce((s, c) => s + c.stock, 0);
+    const value = sheetCards.reduce((s, c) => s + c.prixTotal, 0);
+    const top = [...sheetCards].sort((a, b) => b.prix - a.prix)[0];
+
+    document.getElementById('cat-hero-icon').textContent = sheet?.icon || '🃏';
+    document.getElementById('cat-hero-title').textContent = sheet?.label || sheetName;
+    document.getElementById('cat-hero-count').textContent = `${count} exemplaire${count > 1 ? 's' : ''}`;
+    document.getElementById('cat-hero-value').textContent = formatPrix(value);
+    document.getElementById('cat-hero-top').textContent = top ? `Top : ${formatPrix(top.prix)}` : '';
+    hero.hidden = false;
+  } else {
+    hero.hidden = true;
+  }
+
+  // Reset bloc filter options for this sheet
+  repopulateBlocFilter(sheetName);
+  applyFilters();
+}
+
+function repopulateBlocFilter(sheetName) {
   const blocSel = document.getElementById('filter-bloc');
-  const blocs = [...new Set(allCards.map(c => c.bloc).filter(Boolean))].sort();
+  const currentVal = blocSel.value;
+  blocSel.innerHTML = '<option value="">Tous les blocs</option>';
+  const source = sheetName ? allCards.filter(c => c.sheet === sheetName) : allCards;
+  const blocs = [...new Set(source.map(c => c.bloc).filter(Boolean))].sort();
   blocs.forEach(b => {
     const opt = document.createElement('option');
     opt.value = b; opt.textContent = b;
     blocSel.appendChild(opt);
   });
+  // Restore value if still valid
+  if (blocs.includes(currentVal)) blocSel.value = currentVal;
+  else { blocSel.value = ''; activeFilters.bloc = ''; }
+}
+
+/* ============================================================
+   FILTERS
+   ============================================================ */
+function populateFilters() {
+  repopulateBlocFilter('');
 }
 
 function applyFilters() {
@@ -232,6 +283,10 @@ function createCardEl(card) {
   const etatLabel = ETAT_LABEL[card.etat] || card.etat;
   const isHighPrice = card.prix >= 50;
 
+  // Only show sheet badge when viewing "Tout" (all sheets)
+  const showBadge = !activeFilters.sheet;
+  const sheetInfo = SHEETS.find(s => s.name === card.sheet);
+
   const imgContent = card.image
     ? `<img src="${escHtml(card.image)}" alt="${escHtml(card.nom)}" loading="lazy" onerror="this.parentElement.innerHTML=getPlaceholderSvg()">`
     : `<div class="card-image-placeholder">${svgCardIcon()}<span>${escHtml(card.numero)}</span></div>`;
@@ -239,7 +294,7 @@ function createCardEl(card) {
   el.innerHTML = `
     <div class="card-image-wrap">
       ${imgContent}
-      <span class="card-sheet-badge">${escHtml(card.sheet)}</span>
+      ${showBadge ? `<span class="card-sheet-badge">${sheetInfo ? sheetInfo.icon + ' ' + escHtml(sheetInfo.label) : escHtml(card.sheet)}</span>` : ''}
     </div>
     <div class="card-body">
       <div class="card-name" title="${escHtml(card.nom)}">${escHtml(card.nom)}</div>
@@ -421,6 +476,14 @@ document.addEventListener('DOMContentLoaded', () => {
   loadAllCards();
   document.getElementById('retry-btn')?.addEventListener('click', loadAllCards);
 
+  // Category tabs
+  document.querySelectorAll('.cat-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const sheet = tab.dataset.sheet;
+      setActiveTab(sheet);
+    });
+  });
+
   // Recherche
   const searchInput = document.getElementById('search-input');
   let searchTimeout;
@@ -433,9 +496,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Filtres selects
-  document.getElementById('filter-sheet').addEventListener('change', e => {
-    activeFilters.sheet = e.target.value; applyFilters();
-  });
   document.getElementById('filter-bloc').addEventListener('change', e => {
     activeFilters.bloc = e.target.value; applyFilters();
   });
@@ -448,9 +508,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Reset filters
   function resetFilters() {
-    activeFilters = { search: '', sheet: '', bloc: '', etat: '', sort: 'nom' };
+    activeFilters = { search: '', sheet: activeFilters.sheet, bloc: '', etat: '', sort: 'nom' };
     document.getElementById('search-input').value = '';
-    document.getElementById('filter-sheet').value = '';
     document.getElementById('filter-bloc').value = '';
     document.getElementById('filter-etat').value = '';
     document.getElementById('filter-sort').value = 'nom';
