@@ -236,10 +236,11 @@ function createCardEl(card) {
   const showBadge  = !activeFilters.sheet;
   const sheetInfo  = SHEETS.find(s => s.name === card.sheet);
 
+  const placeholder = `<div class="card-image-placeholder">${svgCardIcon()}<span>${escHtml(card.numero)}</span></div>`;
   const imgContent = card.image
-    ? `<img src="${escHtml(card.image)}" alt="${escHtml(card.nom)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.hidden=false">
+    ? `<img src="${escHtml(card.image)}" alt="${escHtml(card.nom)}" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
        <div class="card-image-placeholder" hidden>${svgCardIcon()}<span>${escHtml(card.numero)}</span></div>`
-    : `<div class="card-image-placeholder">${svgCardIcon()}<span>${escHtml(card.numero)}</span></div>`;
+    : placeholder;
 
   el.innerHTML = `
     <div class="card-image-wrap">
