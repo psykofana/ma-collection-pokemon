@@ -1,10 +1,13 @@
 /* ============================================================
    CONFIGURATION
    ============================================================ */
-const SHEET_ID = '13tKsaOj-QwE2b-3FHim0Isacq1Alfe20B8NOLfy02hM';
+const SHEET_ID = '13tKsaOj-QwE2b-3FHim0Isacq1Alfe20B8NOLfy02hM'; // conservé pour référence
 
-// ⚙️ À remplir après avoir déployé le Google Apps Script (voir apps-script.gs)
-// Exemple: 'https://script.google.com/macros/s/XXXXXXXXX/exec'
+// Supabase
+const SUPABASE_URL = 'https://mfojoudspqeddgjswnqi.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_iZWrIrqIEH22UekYIV-h4A_dVNSDSs4';
+
+// Google Apps Script (écriture uniquement via le formulaire)
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxtG5UY3VkRrreuWJopDps99C2K7OysS1OIJu3xbjzIlrNqVRLczYAueojV0tGvsxm8ag/exec';
 
 const SHEETS = [
@@ -38,25 +41,40 @@ let filteredCards = [];
 let activeFilters = { search: '', sheet: '', bloc: '', serie: '', etat: '', sort: 'nom' };
 
 /* ============================================================
-   DATA FETCHING — via Apps Script (proxy Google Sheets, zéro CORS)
+   DATA FETCHING — Supabase (zéro CORS, multi-appareils)
    ============================================================ */
 async function loadAllCards() {
   showLoading();
-
-  if (!APPS_SCRIPT_URL) {
-    showError('APPS_SCRIPT_URL non configurée');
-    return;
-  }
-
   try {
-    const cacheBust = Math.floor(Date.now() / 300000);
-    const url = `${APPS_SCRIPT_URL}?action=getCards&_=${cacheBust}`;
-    const res = await fetch(url);
+    // Récupérer toutes les cartes en stock depuis Supabase
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/cards?stock=gt.0&order=nom.asc&limit=2000`,
+      {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+        }
+      }
+    );
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'Erreur inconnue');
+    const rows = await res.json();
 
-    allCards = data.cards;
+    allCards = rows.map(r => ({
+      sheet:       r.sheet,
+      nom:         r.nom,
+      attribut:    r.attribut || '',
+      numero:      r.numero || '',
+      annee:       r.annee || '',
+      bloc:        r.bloc || '',
+      serie:       r.serie || '',
+      reverseHolo: r.reverse_holo || 'Non',
+      stock:       r.stock,
+      etat:        r.etat,
+      prix:        parseFloat(r.prix) || 0,
+      prixTotal:   parseFloat(r.prix_total) || 0,
+      image:       r.image || '',
+    }));
+
     populateFilters();
     updateStats();
     updateCatCounts();
@@ -326,7 +344,7 @@ function closeModal() {
    ============================================================ */
 function openAddModal() {
   const warning = document.getElementById('form-script-warning');
-  warning.hidden = !!APPS_SCRIPT_URL; // Cacher si URL configurée
+  if (warning) warning.hidden = true; // Supabase, pas besoin d'Apps Script
 
   // Peupler les blocs dans le formulaire
   const blocSel = document.getElementById('f-bloc');
@@ -362,11 +380,6 @@ function showAddNotice(msg, type = 'info') {
 async function submitAddCard(e) {
   e.preventDefault();
 
-  if (!APPS_SCRIPT_URL) {
-    showAddNotice('Configure d\'abord le Google Apps Script (voir apps-script.gs).', 'error');
-    return;
-  }
-
   const btn     = document.getElementById('add-submit-btn');
   const label   = document.getElementById('add-submit-label');
   const spinner = document.getElementById('add-submit-spinner');
@@ -375,37 +388,57 @@ async function submitAddCard(e) {
   label.hidden   = true;
   spinner.hidden = false;
 
-  const card = {
-    nom:        document.getElementById('f-nom').value.trim(),
-    attribut:   document.getElementById('f-attribut').value.trim(),
-    numero:     document.getElementById('f-numero').value.trim(),
-    annee:      document.getElementById('f-annee').value.trim(),
-    bloc:       document.getElementById('f-bloc').value,
-    serie:      document.getElementById('f-serie').value,
-    reverseHolo:document.getElementById('f-reverse').value,
-    etat:       document.getElementById('f-etat').value,
-    stock:      document.getElementById('f-stock').value,
-    prix:       document.getElementById('f-prix').value,
-    image:      document.getElementById('f-image').value.trim(),
-  };
-
+  const stock = parseInt(document.getElementById('f-stock').value) || 1;
+  const prix  = parseFloat(document.getElementById('f-prix').value) || 0;
   const sheet = document.getElementById('f-sheet').value;
 
-  try {
-    const res  = await fetch(APPS_SCRIPT_URL, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action: 'addCard', card, sheet }),
-    });
-    const data = await res.json();
+  const newCard = {
+    sheet,
+    nom:          document.getElementById('f-nom').value.trim(),
+    attribut:     document.getElementById('f-attribut').value.trim(),
+    numero:       document.getElementById('f-numero').value.trim(),
+    annee:        document.getElementById('f-annee').value.trim(),
+    bloc:         document.getElementById('f-bloc').value,
+    serie:        document.getElementById('f-serie').value,
+    reverse_holo: document.getElementById('f-reverse').value,
+    etat:         document.getElementById('f-etat').value,
+    stock,
+    prix,
+    prix_total:   prix * stock,
+    image:        document.getElementById('f-image').value.trim(),
+  };
 
-    if (data.success) {
-      showAddNotice(`✓ ${data.message}`, 'success');
+  // Vérif doublon
+  const isDuplicate = allCards.some(c =>
+    c.sheet === sheet &&
+    c.nom.toLowerCase() === newCard.nom.toLowerCase() &&
+    c.numero === newCard.numero
+  );
+  if (isDuplicate) {
+    showAddNotice(`"${newCard.nom}" (${newCard.numero}) existe déjà dans ${sheet}.`, 'error');
+    btn.disabled = false; label.hidden = false; spinner.hidden = true;
+    return;
+  }
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/cards`, {
+      method:  'POST',
+      headers: {
+        'apikey':        SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type':  'application/json',
+        'Prefer':        'return=minimal',
+      },
+      body: JSON.stringify(newCard),
+    });
+
+    if (res.ok) {
+      showAddNotice(`✓ "${newCard.nom}" ajoutée dans ${sheet} !`, 'success');
       document.getElementById('add-card-form').reset();
-      // Recharger les cartes après 1.5s
       setTimeout(() => { closeAddModal(); loadAllCards(); }, 1500);
     } else {
-      showAddNotice(data.error || 'Erreur inconnue', 'error');
+      const err = await res.json();
+      showAddNotice(err.message || 'Erreur inconnue', 'error');
     }
   } catch (err) {
     showAddNotice(`Erreur réseau : ${err.message}`, 'error');
