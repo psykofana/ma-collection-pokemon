@@ -436,7 +436,6 @@ a { color: inherit; text-decoration: none; }
 
 /* Empty state séparé du bouton reset */
 #empty-state {
-  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -445,6 +444,7 @@ a { color: inherit; text-decoration: none; }
   text-align: center;
   color: var(--color-text-muted);
 }
+#empty-state:not([hidden]) { display: flex; }
 #empty-state svg { opacity: 0.4; }
 .empty-message {
   display: flex;
@@ -461,6 +461,9 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   justify-content: center;
   padding: var(--space-4) var(--space-6) var(--space-8);
+}
+.empty-reset-wrap:has(#reset-filters-2[hidden]) {
+  display: none;
 }
 
 /* ============================================================
