@@ -213,14 +213,20 @@ function applyFilters() {
    RENDER
    ============================================================ */
 function renderCards() {
-  const grid  = document.getElementById('card-grid');
-  const empty = document.getElementById('empty-state');
-  grid.innerHTML = '';
-  empty.hidden = true; // caché par défaut
-  if (filteredCards.length === 0) {
-    if (allCards.length > 0) empty.hidden = false; // seulement si chargement terminé
-    return;
-  }
+  const grid        = document.getElementById('card-grid');
+  const emptyState  = document.getElementById('empty-state');
+  const resetBtn2   = document.getElementById('reset-filters-2');
+  grid.innerHTML    = '';
+
+  // Message "aucun résultat" : visible seulement si 0 carte filtrée ET données chargées
+  emptyState.hidden = !(filteredCards.length === 0 && allCards.length > 0);
+
+  // Bouton réinitialiser : visible si au moins un filtre actif (hors onglet catégorie et tri)
+  const hasActiveFilters = !!(activeFilters.search || activeFilters.bloc || activeFilters.serie || activeFilters.etat);
+  resetBtn2.hidden = !hasActiveFilters;
+
+  if (filteredCards.length === 0) return;
+
   const frag = document.createDocumentFragment();
   filteredCards.forEach(card => frag.appendChild(createCardEl(card)));
   grid.appendChild(frag);
