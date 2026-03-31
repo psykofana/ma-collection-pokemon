@@ -5,7 +5,7 @@ const SHEET_ID = '13tKsaOj-QwE2b-3FHim0Isacq1Alfe20B8NOLfy02hM';
 
 // ⚙️ À remplir après avoir déployé le Google Apps Script (voir apps-script.gs)
 // Exemple: 'https://script.google.com/macros/s/XXXXXXXXX/exec'
-const APPS_SCRIPT_URL = '';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxtG5UY3VkRrreuWJopDps99C2K7OysS1OIJu3xbjzIlrNqVRLczYAueojV0tGvsxm8ag/exec';
 
 const SHEETS = [
   { name: 'Divers',         gid: '0',          icon: '🃏', label: 'Divers' },
