@@ -78,8 +78,8 @@ async function loadAllCards() {
     populateFilters();
     updateStats();
     updateCatCounts();
+    showMain();      // afficher d'abord, puis remplir
     applyFilters();
-    showMain();
   } catch (err) {
     console.error(err);
     showError(`Chargement impossible : ${err.message}`);
@@ -216,9 +216,11 @@ function renderCards() {
   const grid  = document.getElementById('card-grid');
   const empty = document.getElementById('empty-state');
   grid.innerHTML = '';
-  // N'afficher empty-state que si les données sont chargées ET aucun résultat
-  if (filteredCards.length === 0 && allCards.length > 0) { empty.hidden = false; return; }
-  empty.hidden = true;
+  empty.hidden = true; // caché par défaut
+  if (filteredCards.length === 0) {
+    if (allCards.length > 0) empty.hidden = false; // seulement si chargement terminé
+    return;
+  }
   const frag = document.createDocumentFragment();
   filteredCards.forEach(card => frag.appendChild(createCardEl(card)));
   grid.appendChild(frag);
