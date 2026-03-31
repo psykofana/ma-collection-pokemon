@@ -554,19 +554,15 @@ async function submitAddCard(e) {
    ============================================================ */
 function showLoading() {
   document.getElementById('loading-state').style.display = '';
-  document.getElementById('error-state').hidden  = true;
   document.getElementById('main-content').hidden = true;
 }
 function showMain() {
   document.getElementById('loading-state').style.display = 'none';
-  document.getElementById('error-state').hidden  = true;
   document.getElementById('main-content').hidden = false;
 }
 function showError(msg) {
   console.warn('Erreur chargement:', msg);
-  // On masque le message d'erreur — on affiche juste la grille vide silencieusement
   document.getElementById('loading-state').style.display = 'none';
-  document.getElementById('error-state').hidden  = true;
   document.getElementById('main-content').hidden = false;
 }
 
@@ -608,7 +604,6 @@ function svgCardIcon() {
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
   loadAllCards();
-  document.getElementById('retry-btn')?.addEventListener('click', loadAllCards);
 
   // Category tabs
   document.querySelectorAll('.cat-tab').forEach(tab => {
