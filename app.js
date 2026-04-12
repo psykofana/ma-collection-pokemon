@@ -484,6 +484,7 @@ function closeEditForm() {
 }
 
 async function saveEditCard() {
+  console.log('isAdmin =', isAdmin, '| authToken =', typeof authToken !== 'undefined' ? authToken?.slice(0,20) : 'N/A');
   if (!isAdmin) return; // sécurité côté front
 
   if (!currentEditCard) return;
