@@ -626,8 +626,9 @@ PSYKOKWAK WIDGET
 }
 .error-state svg, .empty-state svg { opacity: 0.4; }
 
-/* Empty state séparé du bouton reset */
+/* Empty state séparé du bouton reset - display géré par JS */
 #empty-state {
+  display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -636,7 +637,6 @@ PSYKOKWAK WIDGET
   text-align: center;
   color: var(--color-text-muted);
 }
-#empty-state:not([hidden]) { display: flex; }
 #empty-state svg { opacity: 0.4; }
 .empty-message {
   display: flex;

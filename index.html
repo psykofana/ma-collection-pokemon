@@ -233,10 +233,14 @@
   <!-- CARD GRID -->
   <main class="main-content" id="main-content" hidden>
     <div class="card-grid" id="card-grid" role="list"></div>
-    <div class="empty-state" id="empty-state" hidden>
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <p>Aucune carte ne correspond à ta recherche.</p>
-      <button class="btn-reset" id="reset-filters-2">Réinitialiser les filtres</button>
+    <div id="empty-state">
+      <div class="empty-message">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <p>Aucune carte ne correspond à ta recherche.</p>
+      </div>
+    </div>
+    <div class="empty-reset-wrap">
+      <button class="btn-reset" id="reset-filters-2" style="display:none">Réinitialiser les filtres</button>
     </div>
   </main>
 
