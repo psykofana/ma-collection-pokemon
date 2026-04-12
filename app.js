@@ -769,10 +769,8 @@ function svgCardIcon() {
   const psyWalker = document.querySelector('.psy-walker');
   if (psyWalker) {
     psyWalker.classList.add('walking');
-    psyWalker.addEventListener('animationend', () => {
-      psyWalker.classList.remove('walking');
-    });
   }
+
 
 
    document.addEventListener('DOMContentLoaded', () => {
