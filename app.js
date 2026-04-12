@@ -359,10 +359,43 @@ function closeModal() {
 let currentEditCard = null;
 let currentModalCard = null;
 
+//peupler les séries du formulaire d'édition en fonction du bloc sélectionné, et pré-sélectionner la série de la carte
+function populateEditSeries(selectedBloc, selectedSerie) {
+  const serieSel = document.getElementById('e-serie');
+  serieSel.innerHTML = '<option value="">— Choisir d\'abord un bloc —</option>';
+  const series = BLOCS_SERIES[selectedBloc] || [];
+  series.forEach(serie => {
+    const opt = document.createElement('option');
+    opt.value = serie;
+    opt.textContent = serie;
+    if (serie === selectedSerie) opt.selected = true;
+    serieSel.appendChild(opt);
+  });
+
+}
 function openEditForm(card) {
   currentEditCard = card;
-  document.getElementById('e-bloc').value = card.bloc || '';
-  document.getElementById('e-serie').value = card.serie || ''; 
+
+  //1. Peupler les blocs dans le formulaire
+  const blocSel = document.getElementById('e-bloc');
+  blocSel.innerHTML = '<option value="">— Choisir un bloc —</option>';
+  Object.keys(BLOCS_SERIES).sort().forEach(bloc => {
+    const opt = document.createElement('option');
+    opt.value = bloc; 
+    opt.textContent = bloc;
+    if (bloc === card.bloc) opt.selected = true;
+    blocSel.appendChild(opt);
+  });
+
+  //2. Peupler les séries dans le formulaire en fonction du bloc de la carte
+  populateEditSeries(card.bloc, card.serie);
+
+  //3. Brancher la cascade bloc → série (une seule fois)
+  if (!blocSel.onchange) {
+    blocSel.onchange = () => populateEditSeries(blocSel.value, '');
+  }
+
+  //4. Préremplir les autres champs
   document.getElementById('e-image').value = card.image || '';
   document.getElementById('e-prix').value  = card.prix || '';
   document.getElementById('e-stock').value = card.stock || 1;
