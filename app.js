@@ -152,6 +152,7 @@ async function initAuth() {
 }
 /* Helper pour construire les headers d'authentification avec le token de session Supabase (ou la clé publique en fallback) */
 async function getAuthHeaders(withContentType = false) {
+  console.log('getAuthHeaders called, supabaseAuthClient:', typeof supabaseAuthClient);
   const { data: { session } } = await supabaseAuthClient.auth.getSession();
   const token = session?.access_token || SUPABASE_KEY;
   const headers = {
