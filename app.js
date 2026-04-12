@@ -31,9 +31,9 @@ const customStorage = {
 };
 const supabaseAuthClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
-    persistSession: false,
+    persistSession: true,
     storage : customStorage, // <- utiliser le stockage personnalisé
-    autoRefreshToken: false,
+    autoRefreshToken: true,
     detectSessionInUrl: false,
   }
 });
@@ -66,8 +66,8 @@ const ETAT_CM = {
 /* ============================================================
    STATE
    ============================================================ */
-let allCards = [];
-let filteredCards = [];
+let allCards = []; // toutes les cartes chargées depuis Supabase
+let filteredCards = []; // cartes après application des filtres (onglet catégorie, bloc, série, état, recherche textuelle)
 let activeFilters = { search: '', sheet: '', bloc: '', serie: '', etat: '', sort: 'nom' };
 
 /* ============================================================
