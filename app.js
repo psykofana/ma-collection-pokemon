@@ -516,7 +516,7 @@ async function saveEditCard() {
     // Trouver l'id Supabase via nom + numero + sheet
     const searchRes = await fetch(
       `${SUPABASE_URL}/rest/v1/cards?nom=eq.${encodeURIComponent(currentEditCard.nom)}&numero=eq.${encodeURIComponent(currentEditCard.numero)}&sheet=eq.${encodeURIComponent(currentEditCard.sheet)}&select=id&limit=1`,
-      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+      { headers: await getAuthHeaders() }
     );
     const found = await searchRes.json();
     if (!found.length) throw new Error('Carte introuvable dans la base');
@@ -524,12 +524,7 @@ async function saveEditCard() {
     const id = found[0].id;
     const res = await fetch(`${SUPABASE_URL}/rest/v1/cards?id=eq.${id}`, {
       method: 'PATCH',
-      headers: {
-        'apikey':        SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Content-Type':  'application/json',
-        'Prefer':        'return=minimal',
-      },
+      headers: await getAuthHeaders(true),
       body: JSON.stringify({ bloc, serie, image, prix, stock, prix_total: prix * stock, etat }),
     });
 
@@ -657,12 +652,7 @@ async function submitAddCard(e) {
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/cards`, {
       method:  'POST',
-      headers: {
-        'apikey':        SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Content-Type':  'application/json',
-        'Prefer':        'return=minimal',
-      },
+      headers: await getAuthHeaders(true),
       body: JSON.stringify(newCard),
     });
 
@@ -775,6 +765,19 @@ function svgCardIcon() {
 
    document.addEventListener('DOMContentLoaded', () => {
   initAuth();
+  async function getAuthHeaders(withContentType = false) {
+  const { data: { session } } = await supabaseAuthClient.auth.getSession();
+  const token = session?.access_token || SUPABASE_KEY;
+  const headers = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${token}`,
+  };
+  if (withContentType) {
+    headers['Content-Type'] = 'application/json';
+    headers['Prefer'] = 'return=minimal';
+  }
+  return headers;
+}
   loadAllCards();
 
   // Category tabs
