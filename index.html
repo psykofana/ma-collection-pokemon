@@ -63,7 +63,8 @@
 
 <!-- LOGIN MODAL -->
 <div class="modal-overlay" id="login-modal-overlay" role="dialog"
-     aria-modal="true" aria-labelledby="login-title" hidden>
+     aria-modal="true" aria-labelledby="login-title" hidden
+     onclick="if (event.target === this) closeLoginModal()">
   <div class="modal" style="max-width:400px">
     <button type="button" class="modal-close" id="login-modal-close" aria-label="Fermer" onclick="closeLoginModal()">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
