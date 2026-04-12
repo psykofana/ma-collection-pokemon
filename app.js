@@ -9,7 +9,13 @@ const SHEET_ID = '13tKsaOj-QwE2b-3FHim0Isacq1Alfe20B8NOLfy02hM'; // conservé po
 const SUPABASE_URL = 'https://mfojoudspqeddgjswnqi.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_iZWrIrqIEH22UekYIV-h4A_dVNSDSs4';
 const { createClient } = supabase; // si vous utilisez le CDN supabase-js
-const supabaseAuthClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseAuthClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+  }
+});
 // Google Apps Script (écriture uniquement via le formulaire)
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxtG5UY3VkRrreuWJopDps99C2K7OysS1OIJu3xbjzIlrNqVRLczYAueojV0tGvsxm8ag/exec';
 
@@ -190,14 +196,9 @@ async function submitLogin() {
 
   const { error } = await supabaseAuthClient.auth.signInWithPassword({ email, password });
 
-  if (error) {
-    errEl.textContent = 'Email ou mot de passe incorrect.';
-    errEl.hidden = false;
-    btn.disabled = false;
-    btn.textContent = 'Se connecter';
-  } else {
-    closeLoginModal();
-  }
+  if (error) throw error;
+  setAdminMode(true);   // ← forçage manuel immédiat, l'événement onAuthStateChange de Supabase gèrera la suite  
+  closeLoginModal();
 }
 /* ============================================================
    FILTERS
