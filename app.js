@@ -150,6 +150,20 @@ async function initAuth() {
     setAdminMode(!!session);
   });
 }
+/* Helper pour construire les headers d'authentification avec le token de session Supabase (ou la clé publique en fallback) */
+async function getAuthHeaders(withContentType = false) {
+  const { data: { session } } = await supabaseAuthClient.auth.getSession();
+  const token = session?.access_token || SUPABASE_KEY;
+  const headers = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${token}`,
+  };
+  if (withContentType) {
+    headers['Content-Type'] = 'application/json';
+    headers['Prefer'] = 'return=minimal';
+  }
+  return headers;
+}
 
 function setAdminMode(admin) {
   isAdmin = admin;
