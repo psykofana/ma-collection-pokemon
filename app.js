@@ -203,6 +203,7 @@ async function submitLogin() {
 /* ============================================================
    FILTERS
    ============================================================ */
+   
 function populateFilters() {
   repopulateBlocFilter('');
 }
@@ -447,6 +448,10 @@ function populateEditSeries(selectedBloc, selectedSerie) {
 
 }
 function openEditForm(card) {
+  if (!isAdmin) {
+    showAuthToast();
+    return;
+  }
   currentEditCard = card;
 
   //1. Peupler les blocs dans le formulaire
@@ -486,7 +491,10 @@ function closeEditForm() {
 
 async function saveEditCard() {
   console.log('isAdmin =', isAdmin, '| authToken =', typeof authToken !== 'undefined' ? authToken?.slice(0,20) : 'N/A');
-  if (!isAdmin) return; // sécurité côté front
+  if (!isAdmin) {
+    showAuthToast();
+    return;
+  }
 
   if (!currentEditCard) return;
 
@@ -675,7 +683,19 @@ async function submitAddCard(e) {
 /* ============================================================
    UI STATE HELPERS
    ============================================================ */
-function showLoading() {
+let toastTimer = null;
+function showAuthToast() {
+  const toast = document.getElementById('toast-auth');
+  toast.hidden = false;
+  toast.classList.add('visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.remove('visible');
+    setTimeout(() => { toast.hidden = true; }, 200);
+  }, 3000);
+}
+
+   function showLoading() {
   document.getElementById('loading-state').style.display = '';
   document.getElementById('main-content').hidden = true;
 }
@@ -781,7 +801,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('modal-edit-save')?.addEventListener('click', saveEditCard);
 
   // Modal ajouter
-  document.getElementById('add-card-btn')?.addEventListener('click', openAddModal);
+  document.getElementById('add-card-btn')?.addEventListener('click', () =>{if (!isAdmin) {showAuthToast(); return;} openAddModal();});
   document.getElementById('add-modal-close')?.addEventListener('click', closeAddModal);
   document.getElementById('add-modal-cancel')?.addEventListener('click', closeAddModal);
   document.getElementById('add-modal-overlay')?.addEventListener('click', e => { if (e.target===e.currentTarget) closeAddModal(); });
