@@ -349,7 +349,7 @@ PSYKOKWAK WIDGET
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: auto;
+  width: calc(var(--header-height) - (var(--psy-wave-padding) * 2));
   height: calc(var(--header-height) - (var(--psy-wave-padding) * 2));
   min-height: 0;
   padding: var(--psy-wave-padding);
@@ -362,6 +362,7 @@ PSYKOKWAK WIDGET
   width: auto;
   height: 100%;
   max-height: 100%;
+  max-width: 100%;
   transform-origin: 50% 82%;
   will-change: transform;
   transition: transform var(--transition);
