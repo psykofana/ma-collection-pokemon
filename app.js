@@ -780,19 +780,6 @@ function svgCardIcon() {
 
    document.addEventListener('DOMContentLoaded', () => {
   initAuth();
-  async function getAuthHeaders(withContentType = false) {
-  const { data: { session } } = await supabaseAuthClient.auth.getSession();
-  const token = session?.access_token || SUPABASE_KEY;
-  const headers = {
-    'apikey': SUPABASE_KEY,
-    'Authorization': `Bearer ${token}`,
-  };
-  if (withContentType) {
-    headers['Content-Type'] = 'application/json';
-    headers['Prefer'] = 'return=minimal';
-  }
-  return headers;
-}
   loadAllCards();
 
   // Category tabs
