@@ -296,11 +296,12 @@ function renderCards() {
   grid.innerHTML    = '';
 
   // Message "aucun résultat" : visible seulement si 0 carte filtrée ET données chargées
-  emptyState.hidden = !(filteredCards.length === 0 && allCards.length > 0);
+  const showEmpty = filteredCards.length === 0 && allCards.length > 0;
+  emptyState.style.display = showEmpty ? 'flex' : 'none';
 
   // Bouton réinitialiser : visible si au moins un filtre actif (hors onglet catégorie et tri)
   const hasActiveFilters = !!(activeFilters.search || activeFilters.bloc || activeFilters.serie || activeFilters.etat);
-  resetBtn2.hidden = !hasActiveFilters;
+  resetBtn2.style.display = hasActiveFilters ? '' : 'none';
 
   if (filteredCards.length === 0) return;
 
