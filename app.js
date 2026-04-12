@@ -9,30 +9,11 @@ const SHEET_ID = '13tKsaOj-QwE2b-3FHim0Isacq1Alfe20B8NOLfy02hM'; // conservé po
 const SUPABASE_URL = 'https://mfojoudspqeddgjswnqi.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_iZWrIrqIEH22UekYIV-h4A_dVNSDSs4';
 const { createClient } = supabase; // si vous utilisez le CDN supabase-js
-const customStorage = {
-  getItem: (key) => {
-    try {
-      const item = localStorage.getItem(key);
-      if (!item) return null;
-      const { value, expiry } = JSON.parse(item);
-      if (Date.now() > expiry) { localStorage.removeItem(key); return null; }
-      return value;
-    } catch { return null; }
-  },
-  setItem: (key, value) => {
-    try {
-      const item = { value, expiry: Date.now() + 7 * 24 * 60 * 60 * 1000 }; // 7 jours
-      localStorage.setItem(key, JSON.stringify(item));
-    } catch {}
-  },
-  removeItem: (key) => {
-    try { localStorage.removeItem(key); } catch {}
-  }
-};
+
 const supabaseAuthClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
     persistSession: true,
-    storage : customStorage, // <- utiliser le stockage personnalisé
+    storageKey: 'poke-auth-session',
     autoRefreshToken: true,
     detectSessionInUrl: false,
   }
