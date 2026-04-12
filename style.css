@@ -322,7 +322,7 @@ PSYKOKWAK WIDGET
   width: var(--psy-size);
   z-index: var(--psy-z);
   pointer-events: none;
-  animation: psy-cross var(--psy-speed) linear infinite;
+  animation: psy-cross var(--psy-speed) linear 1 forwards;
   filter: var(--psy-shadow);
 }
 
