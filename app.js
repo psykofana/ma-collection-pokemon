@@ -768,6 +768,7 @@ function svgCardIcon() {
    EVENT LISTENERS
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
+  initAuth();
   loadAllCards();
 
   // Category tabs
