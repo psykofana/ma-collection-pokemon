@@ -804,6 +804,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('modal-edit-cancel')?.addEventListener('click', closeEditForm);
   document.getElementById('modal-edit-save')?.addEventListener('click', saveEditCard);
 
+  // Modal login
+  document.getElementById('login-modal-close')?.addEventListener('click', closeLoginModal);
+  document.getElementById('login-modal-overlay')?.addEventListener('click', e => { if (e.target===e.currentTarget) closeLoginModal(); });
+
   // Modal ajouter
   document.getElementById('add-card-btn')?.addEventListener('click', () =>{if (!isAdmin) {showAuthToast(); return;} openAddModal();});
   document.getElementById('add-modal-close')?.addEventListener('click', closeAddModal);
