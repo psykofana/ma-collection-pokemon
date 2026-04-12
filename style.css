@@ -322,9 +322,13 @@ PSYKOKWAK WIDGET
   width: var(--psy-size);
   z-index: var(--psy-z);
   pointer-events: none;
-  animation: psy-cross var(--psy-speed) linear 1 forwards;
   filter: var(--psy-shadow);
 }
+
+.psy-walker.walking {
+  animation: psy-cross var(--psy-speed) linear 1 forwards;
+}
+
 
 .psy-walker img {
   display: block;
