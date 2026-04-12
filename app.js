@@ -748,7 +748,25 @@ function svgCardIcon() {
 /* ============================================================
    EVENT LISTENERS
    ============================================================ */
-document.addEventListener('DOMContentLoaded', () => {
+
+  const waveTrigger = document.querySelector('.psy-wave-trigger');
+  if (waveTrigger) {
+    const replayWave = () => {
+      waveTrigger.classList.remove('is-waving');
+      void waveTrigger.offsetWidth;
+      waveTrigger.classList.add('is-waving');
+    };
+
+    waveTrigger.addEventListener('mouseenter', replayWave);
+    waveTrigger.addEventListener('focus', replayWave);
+    waveTrigger.addEventListener('click', replayWave);
+
+    waveTrigger.addEventListener('animationend', () => {
+      waveTrigger.classList.remove('is-waving');
+    }, true);
+  }
+
+   document.addEventListener('DOMContentLoaded', () => {
   initAuth();
   loadAllCards();
 

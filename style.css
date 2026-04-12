@@ -291,7 +291,123 @@ a { color: inherit; text-decoration: none; }
   background: var(--color-accent-light);
   color: var(--color-accent);
 }
+/* ============================================================
+PSYKOKWAK WIDGET
+============================================================ */
+:root, [data-theme="light"] {
+  --psy-size: clamp(74px, 8vw, 116px);
+  --psy-bottom: 10px;
+  --psy-speed: 20s;
+  --psy-z: 80;
+  --psy-shadow: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.18));
+  --psy-wave-size: 122px;
+  --psy-wave-duration: 700ms;
+  --psy-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
 
+[data-theme="dark"] {
+  --psy-shadow: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.35));
+}
+
+.psy-walker {
+  position: fixed;
+  left: -160px;
+  bottom: var(--psy-bottom);
+  width: var(--psy-size);
+  z-index: var(--psy-z);
+  pointer-events: none;
+  animation: psy-cross var(--psy-speed) linear infinite;
+  filter: var(--psy-shadow);
+}
+
+.psy-walker img {
+  display: block;
+  width: 100%;
+  transform-origin: 50% 86%;
+  animation: psy-bob 0.72s ease-in-out infinite;
+  user-select: none;
+}
+
+.psy-ground {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  z-index: calc(var(--psy-z) - 1);
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-accent) 12%, transparent),
+    color-mix(in srgb, var(--color-accent) 30%, transparent),
+    color-mix(in srgb, var(--color-accent) 12%, transparent)
+  );
+}
+
+.psy-wave-trigger {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 100%;
+  min-height: 220px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.psy-wave-trigger img {
+  width: min(var(--psy-wave-size), 62vw);
+  transform-origin: 50% 82%;
+  will-change: transform;
+  transition: transform var(--transition);
+  user-select: none;
+  pointer-events: none;
+}
+
+.psy-wave-trigger:hover img,
+.psy-wave-trigger:focus-visible img,
+.psy-wave-trigger.is-waving img {
+  animation: psy-wave var(--psy-wave-duration) var(--psy-ease) 2;
+}
+
+@keyframes psy-cross {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(100vw + 260px)); }
+}
+
+@keyframes psy-bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-3px) rotate(-1.4deg); }
+  50% { transform: translateY(1px) rotate(0.5deg); }
+  75% { transform: translateY(-2px) rotate(1.4deg); }
+}
+
+@keyframes psy-wave {
+  0% { transform: rotate(0deg) translateY(0); }
+  18% { transform: rotate(-5deg) translateY(-2px); }
+  38% { transform: rotate(6deg) translateY(-5px); }
+  58% { transform: rotate(-4deg) translateY(-1px); }
+  78% { transform: rotate(5deg) translateY(-4px); }
+  100% { transform: rotate(0deg) translateY(0); }
+}
+
+@media (max-width: 640px) {
+  :root, [data-theme="light"] {
+    --psy-size: 84px;
+    --psy-wave-size: 104px;
+    --psy-speed: 16s;
+    --psy-bottom: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .psy-walker,
+  .psy-walker img,
+  .psy-wave-trigger img {
+    animation: none !important;
+    transition: none !important;
+  }
+}
 /* ============================================================
    CATEGORY HERO
    ============================================================ */
