@@ -1161,7 +1161,7 @@ PSYKOKWAK WIDGET
 /* ============================================================
    RESPONSIVE
    ============================================================ */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .stats-bar-inner { gap: var(--space-5); padding: var(--space-4) var(--space-4); }
   .filters-inner { padding: 0 var(--space-4); }
   .filters-toggle { display: flex; }
