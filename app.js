@@ -808,6 +808,15 @@ function svgCardIcon() {
     activeFilters.sort = e.target.value; applyFilters();
   });
 
+  // Toggle filters
+  const filtersToggle = document.getElementById('filters-toggle');
+  const filtersSection = document.querySelector('.filters-section');
+  if (filtersToggle && filtersSection) {
+    filtersToggle.addEventListener('click', () => {
+      filtersSection.classList.toggle('expanded');
+    });
+  }
+
   // Reset
   function resetFilters() {
     activeFilters = { search:'', sheet:activeFilters.sheet, bloc:'', serie:'', etat:'', sort:'nom' };

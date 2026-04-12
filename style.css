@@ -504,6 +504,28 @@ PSYKOKWAK WIDGET
   flex: 1;
   min-width: 200px;
 }
+.filters-toggle {
+  display: none;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  transition: background var(--transition), color var(--transition);
+  cursor: pointer;
+}
+.filters-toggle:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+.filters-toggle svg {
+  transition: transform var(--transition);
+}
+.filters-section.expanded .filters-toggle svg {
+  transform: rotate(45deg);
+}
 .search-icon {
   position: absolute;
   left: var(--space-3);
@@ -1142,6 +1164,11 @@ PSYKOKWAK WIDGET
 @media (max-width: 768px) {
   .stats-bar-inner { gap: var(--space-5); padding: var(--space-4) var(--space-4); }
   .filters-inner { padding: 0 var(--space-4); }
+  .filters-toggle { display: flex; }
+  .filter-group { display: none; }
+  .filter-actions { display: none; }
+  .filters-section.expanded .filter-group { display: flex; }
+  .filters-section.expanded .filter-actions { display: flex; }
   .main-content { padding: var(--space-5) var(--space-4); }
   .card-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-3); }
   .header-inner { padding: 0 var(--space-4); }
