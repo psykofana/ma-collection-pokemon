@@ -175,7 +175,7 @@ a { color: inherit; text-decoration: none; }
 /* Toast d'authentification */
 .toast-auth {
   position: fixed;
-  bottom: 1.5rem;
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0));
   left: 50%;
   transform: translateX(-50%) translateY(1rem);
   background: var(--color-text);
@@ -183,7 +183,12 @@ a { color: inherit; text-decoration: none; }
   padding: 0.75rem 1.25rem;
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
-  white-space: nowrap;
+  max-width: min(100%, 26rem);
+  width: min(100%, calc(100vw - 2rem));
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  text-align: center;
   opacity: 0;
   transition: opacity 200ms ease, transform 200ms ease;
   pointer-events: none;
@@ -351,7 +356,9 @@ PSYKOKWAK WIDGET
   place-items: center;
   width: calc(var(--header-height) - (var(--psy-wave-padding) * 2));
   height: calc(var(--header-height) - (var(--psy-wave-padding) * 2));
+  min-width: 0;
   min-height: 0;
+  aspect-ratio: 1 / 1;
   padding: var(--psy-wave-padding);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -359,8 +366,8 @@ PSYKOKWAK WIDGET
 }
 
 .psy-wave-trigger img {
-  width: auto;
-  height: 100%;
+  width: 100%;
+  height: auto;
   max-height: 100%;
   max-width: 100%;
   transform-origin: 50% 82%;
@@ -399,10 +406,21 @@ PSYKOKWAK WIDGET
 
 @media (max-width: 640px) {
   :root, [data-theme="light"] {
-    --psy-size: 84px;
-    --psy-wave-size: 104px;
+    --psy-size: 56px;
+    --psy-wave-size: 88px;
+    --psy-wave-padding: 4px;
     --psy-speed: 16s;
     --psy-bottom: 8px;
+  }
+
+  .psy-wave-trigger {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .psy-wave-trigger img {
+    width: 100%;
+    height: auto;
   }
 }
 
@@ -1135,4 +1153,5 @@ PSYKOKWAK WIDGET
   .card-grid { grid-template-columns: repeat(2, 1fr); }
   .cat-label { display: none; }
   .cat-tab { padding: var(--space-3) var(--space-2); gap: var(--space-1); }
+  .psy-wave-text { display: none; }
 }
