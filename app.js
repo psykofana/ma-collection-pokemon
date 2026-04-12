@@ -4,9 +4,12 @@
 const SHEET_ID = '13tKsaOj-QwE2b-3FHim0Isacq1Alfe20B8NOLfy02hM'; // conservé pour référence
 
 // Supabase
+// Supabase Auth client (SDK léger via CDN)
+
 const SUPABASE_URL = 'https://mfojoudspqeddgjswnqi.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_iZWrIrqIEH22UekYIV-h4A_dVNSDSs4';
-
+const { createClient } = supabase; // si vous utilisez le CDN supabase-js
+const supabaseAuthClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 // Google Apps Script (écriture uniquement via le formulaire)
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxtG5UY3VkRrreuWJopDps99C2K7OysS1OIJu3xbjzIlrNqVRLczYAueojV0tGvsxm8ag/exec';
 
@@ -126,7 +129,76 @@ function setActiveTab(sheetName) {
   repopulateBlocFilter(sheetName);
   applyFilters();
 }
+// ============================================================
+// AUTH — Supabase Auth
+// ============================================================
+let isAdmin = false;
 
+async function initAuth() {
+  const { data: { session } } = await supabaseAuthClient.auth.getSession();
+  setAdminMode(!!session);
+
+  supabaseAuthClient.auth.onAuthStateChange((_event, session) => {
+    setAdminMode(!!session);
+  });
+}
+
+function setAdminMode(admin) {
+  isAdmin = admin;
+  // Affiche/masque les boutons d'édition
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.hidden = !admin;
+  });
+  // Bouton login/logout dans le header
+  const btn = document.getElementById('auth-btn');
+  if (btn) {
+    btn.textContent = admin ? 'Déconnexion' : 'Admin';
+    btn.dataset.mode = admin ? 'logout' : 'login';
+  }
+}
+
+async function handleAuthBtn() {
+  const btn = document.getElementById('auth-btn');
+  if (btn.dataset.mode === 'logout') {
+    await supabaseAuthClient.auth.signOut();
+  } else {
+    openLoginModal();
+  }
+}
+/* ============================================================
+   Fonction de connexion (login) et déconnexion (logout) avec Supabase Auth
+   ============================================================ */
+function openLoginModal() {
+  document.getElementById('login-modal-overlay').hidden = false;
+  document.getElementById('login-email').focus();
+}
+
+function closeLoginModal() {
+  document.getElementById('login-modal-overlay').hidden = true;
+  document.getElementById('login-error').hidden = true;
+}
+
+async function submitLogin() {
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn      = document.getElementById('login-submit');
+  const errEl    = document.getElementById('login-error');
+
+  btn.disabled = true;
+  btn.textContent = '...';
+  errEl.hidden = true;
+
+  const { error } = await supabaseAuthClient.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    errEl.textContent = 'Email ou mot de passe incorrect.';
+    errEl.hidden = false;
+    btn.disabled = false;
+    btn.textContent = 'Se connecter';
+  } else {
+    closeLoginModal();
+  }
+}
 /* ============================================================
    FILTERS
    ============================================================ */
@@ -412,6 +484,8 @@ function closeEditForm() {
 }
 
 async function saveEditCard() {
+  if (!isAdmin) return; // sécurité côté front
+
   if (!currentEditCard) return;
 
   const saveBtn = document.getElementById('modal-edit-save');
@@ -524,6 +598,7 @@ function showAddNotice(msg, type = 'info') {
 }
 
 async function submitAddCard(e) {
+  if (!isAdmin) return; // sécurité côté front
   e.preventDefault();
 
   const btn     = document.getElementById('add-submit-btn');
