@@ -432,7 +432,7 @@ function openModal(card) {
 
   const cmEtat = ETAT_CM[card.etat] || 2;
   document.getElementById('modal-cardmarket-link').href =
-    `https://www.cardmarket.com/fr/Pokemon/Products/Search?searchString=${encodeURIComponent(card.nom)}&minCondition=${cmEtat}&language=2&sortBy=price_asc`;
+    `https://www.cardmarket.com/fr/Pokemon/Products/Singles?idExpansion=0&Search?searchString=${encodeURIComponent(card.nom)}&minCondition=${cmEtat}&language=2`;
 
   document.getElementById('modal-overlay').hidden = false;
   document.body.style.overflow = 'hidden';
