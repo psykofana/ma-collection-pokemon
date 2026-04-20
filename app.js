@@ -71,6 +71,7 @@ async function loadAllCards() {
     const rows = await res.json();
 
     allCards = rows.map(r => ({
+      id:          r.id,
       sheet:       r.sheet,
       nom:         r.nom,
       attribut:    r.attribut || '',
@@ -84,6 +85,7 @@ async function loadAllCards() {
       prix:        parseFloat(r.prix) || 0,
       prixTotal:   parseFloat(r.prix_total) || 0,
       image:       r.image || '',
+      tradeOn:     r.trade_on || false,
     }));
 
     populateFilters();
@@ -109,6 +111,10 @@ function updateCatCounts() {
     const el = document.getElementById(`cat-count-${sheet.name}`);
     if (el) el.textContent = count;
   });
+  // Compteur Trade ON
+  const tradeCount = allCards.filter(c => c.tradeOn).reduce((s,c) => s + c.stock, 0);
+  const elTrade = document.getElementById('cat-count-trade');
+  if (elTrade) elTrade.textContent = tradeCount;
 }
 
 function setActiveTab(sheetName) {
@@ -119,7 +125,16 @@ function setActiveTab(sheetName) {
     tab.setAttribute('aria-pressed', String(isActive));
   });
   const hero = document.getElementById('category-hero');
-  if (sheetName) {
+  if (sheetName === 'trade') {
+    const tradeCards = allCards.filter(c => c.tradeOn);
+    const count = tradeCards.reduce((s,c) => s + c.stock, 0);
+    document.getElementById('cat-hero-icon').textContent  = '🔄';
+    document.getElementById('cat-hero-title').textContent = 'Trade ON';
+    document.getElementById('cat-hero-count').textContent = `${count} carte${count > 1 ? 's' : ''} disponible${count > 1 ? 's' : ''}`;
+    document.getElementById('cat-hero-value').textContent = '';
+    document.getElementById('cat-hero-top').textContent   = '';
+    hero.hidden = false;
+  } else if (sheetName) {
     const sheet = SHEETS.find(s => s.name === sheetName);
     const sheetCards = allCards.filter(c => c.sheet === sheetName);
     const count = sheetCards.reduce((s,c) => s + c.stock, 0);
@@ -134,7 +149,7 @@ function setActiveTab(sheetName) {
   } else {
     hero.hidden = true;
   }
-  repopulateBlocFilter(sheetName);
+  repopulateBlocFilter(sheetName === 'trade' ? '' : sheetName);
   applyFilters();
 }
 // ============================================================
@@ -274,7 +289,11 @@ function applyFilters() {
   const q = search.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
   filteredCards = allCards.filter(card => {
-    if (sheet && card.sheet !== sheet) return false;
+    if (sheet === 'trade') {
+      if (!card.tradeOn) return false;
+    } else {
+      if (sheet && card.sheet !== sheet) return false;
+    }
     if (bloc  && card.bloc  !== bloc)  return false;
     if (serie && card.serie !== serie) return false;
     if (etat  && card.etat  !== etat)  return false;
@@ -347,6 +366,7 @@ function createCardEl(card) {
     <div class="card-image-wrap">
       ${imgContent}
       ${showBadge ? `<span class="card-sheet-badge">${sheetInfo ? sheetInfo.icon + ' ' + escHtml(sheetInfo.label) : escHtml(card.sheet)}</span>` : ''}
+      ${card.tradeOn ? '<span class="card-trade-badge">Trade</span>' : ''}
     </div>
     <div class="card-body">
       <div class="card-name" title="${escHtml(card.nom)}">${escHtml(card.nom)}</div>
@@ -496,6 +516,13 @@ function openEditForm(card) {
   document.getElementById('e-prix').value  = card.prix || '';
   document.getElementById('e-stock').value = card.stock || 1;
   document.getElementById('e-etat').value  = card.etat || 'Nmint/Mint';
+  //5. Toggle Trade ON
+  const tradeChk = document.getElementById('e-trade-on');
+  const tradeLbl = document.getElementById('e-trade-on-label');
+  tradeChk.checked = card.tradeOn || false;
+  tradeLbl.textContent = tradeChk.checked ? 'Oui' : 'Non';
+  tradeChk.onchange = () => { tradeLbl.textContent = tradeChk.checked ? 'Oui' : 'Non'; };
+
   document.getElementById('modal-edit-notice').hidden = true;
   document.getElementById('modal-edit-form').hidden = false;
   document.getElementById('modal-edit-btn').hidden = true;
@@ -540,7 +567,7 @@ async function saveEditCard() {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/cards?id=eq.${id}`, {
       method: 'PATCH',
       headers: await getAuthHeaders(true),
-      body: JSON.stringify({ bloc, serie, image, prix, stock, prix_total: prix * stock, etat }),
+      body: JSON.stringify({ bloc, serie, image, prix, stock, prix_total: prix * stock, etat, trade_on: document.getElementById('e-trade-on').checked }),
     });
 
     if (res.ok) {
@@ -557,7 +584,7 @@ async function saveEditCard() {
       // Mettre à jour dans allCards
       const idx = allCards.findIndex(c => c.nom === currentEditCard.nom && c.numero === currentEditCard.numero && c.sheet === currentEditCard.sheet);
       if (idx !== -1) {
-        allCards[idx] = { ...allCards[idx], bloc, serie, image, prix, stock, prixTotal: prix * stock, etat };
+        allCards[idx] = { ...allCards[idx], bloc, serie, image, prix, stock, prixTotal: prix * stock, etat, tradeOn: document.getElementById('e-trade-on').checked };
       }
 
       const noticeEl = document.getElementById('modal-edit-notice');
@@ -601,6 +628,13 @@ function openAddModal() {
   document.getElementById('add-modal-notice').hidden = true;
   document.getElementById('add-card-form').reset();
   document.getElementById('f-serie').innerHTML = '<option value="">— Choisir d\'abord un bloc —</option>';
+  // Reset toggle Trade ON
+  const fTradeChk = document.getElementById('f-trade-on');
+  const fTradeLbl = document.getElementById('f-trade-on-label');
+  if (fTradeChk) { fTradeChk.checked = false; fTradeLbl.textContent = 'Non'; }
+  if (fTradeChk && !fTradeChk.onchange) {
+    fTradeChk.onchange = () => { fTradeLbl.textContent = fTradeChk.checked ? 'Oui' : 'Non'; };
+  }
 
   document.getElementById('add-modal-overlay').hidden = false;
   document.body.style.overflow = 'hidden';
@@ -650,6 +684,7 @@ async function submitAddCard(e) {
     prix,
     prix_total:   prix * stock,
     image:        document.getElementById('f-image').value.trim(),
+    trade_on:     document.getElementById('f-trade-on').checked,
   };
 
   // Vérif doublon

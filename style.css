@@ -1186,3 +1186,78 @@ PSYKOKWAK WIDGET
   .cat-tab { padding: var(--space-3) var(--space-2); gap: var(--space-1); }
   .psy-wave-text { display: none; }
 }
+
+/* ============================================================
+   TOGGLE SWITCH — Trade ON
+   ============================================================ */
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 0.75rem);
+}
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--color-border, #d1d5db);
+  border-radius: 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.toggle-switch input:checked + .toggle-slider {
+  background: #cc2929;
+}
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+.toggle-label {
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--color-text-muted, #6b7280);
+  min-width: 2.5rem;
+}
+
+/* Badge Trade ON sur les cartes */
+.card-trade-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: #cc2929;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+/* Onglet Trade ON — accent rouge */
+.cat-tab-trade.active {
+  color: #cc2929;
+  border-bottom-color: #cc2929;
+}
