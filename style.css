@@ -1244,7 +1244,7 @@ PSYKOKWAK WIDGET
 .card-trade-badge {
   position: absolute;
   top: 6px;
-  left: 6px;
+  right: 6px;
   background: #cc2929;
   color: #fff;
   font-size: 0.6rem;
